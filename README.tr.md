@@ -1,8 +1,8 @@
-# TROTTEN Motorized
+# IKEA TROTTEN / SKARSTA Motorized
 
 [English](README.md) · **Türkçe**
 
-Elle çevrilen **IKEA TROTTEN** oturma/ayakta çalışma masasını bir **ESP32**, 12V redüktörlü bir motor ve birkaç ucuz modülle motorlu hale getirir.
+Elle çevrilen **IKEA TROTTEN** (ve aynı altıgen krank girişine sahip **SKARSTA**) oturma/ayakta çalışma masasını bir **ESP32**, 12V redüktörlü bir motor ve birkaç ucuz modülle motorlu hale getirir.
 Masa, ESPHome üzerinden **Home Assistant**'tan kontrol edilir. İstersen masanın önüne küçük OLED ekranlı bir **buton paneli** de takabilirsin; panel Home Assistant ya da WiFi yokken de çalışır.
 
 <p align="center">
@@ -25,20 +25,74 @@ Masa, ESPHome üzerinden **Home Assistant**'tan kontrol edilir. İstersen masan�
 
 ## Malzeme listesi
 
-| Parça | Not |
-|---|---|
-| ESP32-WROOM DevKit (30 pin) | Aynı pin dizilimine sahip her ESP32 kartı olur |
-| 2'li röle modülü, JQC-3FF-S-Z, 5V bobin | H-köprü olarak bağlanır (kablolamaya bak) |
-| LM2596 voltaj düşürücü (HW-411) | Hiçbir şey bağlamadan önce **5,0V**'a ayarla |
-| HC-SR04 ultrasonik sensör | Yükseklik ölçümü |
-| 3 × 10kΩ direnç | ECHO için voltaj bölücü (5V → 3,3V) |
-| 12V redüktörlü motor, 37 mm (JGB37-520 / 37GB555 ailesi) | 6 mm D-kesitli mil |
-| 12V adaptör, en az 3A | Laptop ya da LED adaptörü de olur, yeter ki 12V ve en az 3A versin |
-| Panel tipi 5×20 sigorta yuvası + 4A sigorta | Kapağın arka duvarında |
-| Panel tipi DC jak DC-022, 5,5×2,1 mm | Kapağın arka duvarında |
-| Wago 221 klemens (3'lü + 5'li) | 12V ve GND dağıtımı |
-| 4 adet M3 sıcak gömme insert, M3 / M2.5 vidalar, 4×16 ahşap vidası | |
-| **Panel (isteğe bağlı):** 0,91" SSD1306 128×32 I2C OLED, 3 adet 6×6 mm tactile switch, 2 adet RJ45 keystone, düz patch kablo | |
+### Elektronik (ana kutu)
+
+| Adet | Parça | Not |
+|---|---|---|
+| 1 | ESP32-WROOM-32 DevKit, 30 pin | Bu pin dizilimindeki her ESP32 kartı olur; ayaklar 24 × 47 mm delik aralığına göre |
+| 1 | 2'li röle modülü, JQC-3FF-S-Z, **5V bobin**, optokuplörlü, JD-VCC jumper'lı | Motor H-köprüsü (10A kontak) |
+| 1 | LM2596 voltaj düşürücü (HW-411) | 12V → **5,0V**: ESP32, röle bobinleri, HC-SR04 |
+| 1 | HC-SR04 ultrasonik sensör | Yükseklik ölçümü, yere bakar |
+| 1 | 12V DC redüktörlü motor, 37 mm (JGB37-520 / 37GB555 ailesi), 6 mm D-kesitli mil | Krankın yerine geçer |
+| 3 | 10kΩ direnç, ¼ W | ECHO voltaj bölücü (5V → 3,3V) |
+| 1 | 100 nF seramik kondansatör (isteğe bağlı) | Motor uçlarına, paraziti azaltır |
+
+### Güç
+
+| Adet | Parça | Not |
+|---|---|---|
+| 1 | 12V adaptör, **en az 3A** (ideali 5A), 5,5 × 2,1 mm fiş | 12V ve en az 3A veriyorsa laptop ya da LED adaptörü de olur |
+| 1 | Panel tipi DC jak DC-022B, 5,5 × 2,1 mm (11 mm gövde) | Kapağın arka duvarı |
+| 1 | Panel tipi 5 × 20 mm sigorta yuvası (12 mm gövde) + **4A** sigorta | Kapağın arka duvarı, dışarıdan değiştirilir |
+| 1 + 1 | Wago 221 klemens: 3'lü ve 5'li | +12V ve GND dağıtımı (klemens bloğu da olur) |
+
+### Ön buton paneli (isteğe bağlı)
+
+| Adet | Parça | Not |
+|---|---|---|
+| 1 | 0,91" OLED, SSD1306, 128 × 32, I2C (4 pin) | Yükseklik ve durum |
+| 3 | 6 × 6 mm tactile switch, 4 bacaklı, ~5 mm boy | ▲ ▼ ■ (boyunu ölç, `panel-box.scad` içindeki `sw_yukseklik`) |
+| 2 | RJ45 keystone jak, Cat5e/Cat6 | Biri ana kapakta, biri panelde |
+| 1 | Düz (T568B) patch kablo, 1–1,5 m | Ana kutu ↔ panel |
+
+### Vida ve bağlantı elemanları
+
+| Adet | Parça | Nerede |
+|---|---|---|
+| 4 | M3 sıcak gömme insert | Taban plakasındaki kapak vida noktaları |
+| 4 | M3 × 12 vida | Kapak → taban |
+| 6 | M3 × 8 vida | Motor → motor yuvası |
+| 10 | M3 veya M2.5 × 6 vida | ESP32 (4), röle modülü (4), LM2596 (2) |
+| 1 + 1 | M3 × 8 sabitleme vidası + M3 somun | Kaplin, motor miline |
+| 4 | M2 sac vidası (ya da sıcak silikon) | HC-SR04, ara parçaya |
+| 4 | 4 × 16 mm ahşap vidası | Taban → masa |
+| 4 | 3,5 × 12 mm ahşap vidası | Panel → masanın ön kenarı |
+| 1 | 6 mm alyan anahtarı, düz kısmından ~6 cm kesilmiş | Kaplin → masanın altıgen girişi |
+
+### Kablo ve sarf malzemesi
+
+- 12V ve motor hattı için 1 mm² kırmızı/siyah kablo, LM2596 girişi için 0,5 mm²
+- Dişi-dişi dupont jumper seti (sinyaller), kapak sökülebilsin diye birkaç 4 pinli dupont konnektör
+- Eski bir ethernet kablosundan kısa renkli damarlar (keystone ↔ kartlar)
+- Makaron, lehim, biraz sıcak silikon
+
+### Baskı / filament
+
+- Hepsi için yaklaşık **250–300 g PETG** (kutular için PLA da olur, kaplin için PETG önerilir)
+- En büyük parçalar ~136 × 181 mm, en az ~200 × 200 mm tabla gerekir
+- Buton başlıkları: AMS/MMU ile 2–3 renk, ya da tek renk + filament değişimi
+
+### Aletler
+
+- Havya, multimetre (LM2596'yı hiçbir şey bağlamadan önce 5,0V'a ayarlamak için)
+- Insert ucu (ya da havya), tornavidalar, kumpas
+- Keystone zımbalama aleti (panel için)
+- Alyan anahtarını kesmek için demir testeresi ya da taşlama
+
+### Yazılım
+
+- ESPHome eklentili Home Assistant (ya da ESPHome CLI), ilk yükleme için USB-C kablo
+- Tarayıcıdan yükleyeceksen web.esphome.io için Chrome/Edge
 
 ## Baskı parçaları
 

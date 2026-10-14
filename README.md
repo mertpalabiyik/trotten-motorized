@@ -1,8 +1,8 @@
-# TROTTEN Motorized
+# IKEA TROTTEN / SKARSTA Motorized
 
 **English** · [Türkçe](README.tr.md)
 
-Motorize the hand-cranked **IKEA TROTTEN** sit/stand desk with an **ESP32**, a 12 V gear motor and a few cheap modules.
+Motorize the hand-cranked **IKEA TROTTEN** (and **SKARSTA**, same hex crank input) sit/stand desk with an **ESP32**, a 12 V gear motor and a few cheap modules.
 The desk is controlled from **Home Assistant** (via ESPHome) and from an optional **front button panel** with a small OLED that works even when Home Assistant or WiFi is down.
 
 <p align="center">
@@ -23,20 +23,74 @@ The desk is controlled from **Home Assistant** (via ESPHome) and from an optiona
 
 ## Bill of materials
 
-| Part | Notes |
-|---|---|
-| ESP32-WROOM DevKit (30-pin) | Any ESP32 dev board with the same pinout works |
-| 2-channel relay module, JQC-3FF-S-Z, 5 V coil | Wired as an H-bridge (see wiring) |
-| LM2596 step-down (HW-411) | Set to **5.0 V** before connecting anything |
-| HC-SR04 ultrasonic sensor | Height measurement |
-| 3 × 10 kΩ resistors | ECHO voltage divider (5 V → 3.3 V) |
-| 12 V gear motor, 37 mm (JGB37-520 / 37GB555 family) | 6 mm D-shaft |
-| 12 V power supply, ≥ 3 A | Laptop/LED supplies work if they deliver 12 V ≥ 3 A |
-| Panel-mount 5×20 fuse holder + 4 A fuse | Rear wall of the cover |
-| Panel-mount DC jack DC-022, 5.5×2.1 mm | Rear wall of the cover |
-| Wago 221 connectors (3-way + 5-way) | 12 V / GND distribution |
-| M3 heat-set inserts ×4, M3 / M2.5 screws, 4×16 wood screws | |
-| **Panel (optional):** 0.91" SSD1306 128×32 I2C OLED, 3 × 6×6 mm tactile switches, 2 × RJ45 keystone jacks, straight patch cable | |
+### Electronics (main box)
+
+| Qty | Part | Notes |
+|---|---|---|
+| 1 | ESP32-WROOM-32 DevKit, 30-pin | Any ESP32 dev board with this pinout; standoffs fit 24 × 47 mm hole spacing |
+| 1 | 2-channel relay module, JQC-3FF-S-Z, **5 V coil**, optocoupler, with JD-VCC jumper | Used as the motor H-bridge (10 A contacts) |
+| 1 | LM2596 step-down module (HW-411) | 12 V → **5.0 V** for ESP32, relay coils and HC-SR04 |
+| 1 | HC-SR04 ultrasonic sensor | Height measurement, points at the floor |
+| 1 | 12 V DC gear motor, 37 mm (JGB37-520 / 37GB555 family), 6 mm D-shaft | Replaces the hand crank |
+| 3 | 10 kΩ resistor, ¼ W | ECHO voltage divider (5 V → 3.3 V) |
+| 1 | 100 nF ceramic capacitor (optional) | Across the motor terminals, reduces noise |
+
+### Power
+
+| Qty | Part | Notes |
+|---|---|---|
+| 1 | 12 V power supply, **≥ 3 A** (5 A ideal), 5.5 × 2.1 mm plug | A laptop/LED supply works if it is 12 V ≥ 3 A |
+| 1 | Panel-mount DC jack DC-022B, 5.5 × 2.1 mm (11 mm body) | Rear wall of the cover |
+| 1 | Panel-mount 5 × 20 mm fuse holder (12 mm body) + **4 A** fuse | Rear wall of the cover, replaceable from outside |
+| 1 + 1 | Wago 221 lever connectors: 3-way and 5-way | +12 V and GND distribution (a terminal block also works) |
+
+### Front button panel (optional)
+
+| Qty | Part | Notes |
+|---|---|---|
+| 1 | 0.91" OLED, SSD1306, 128 × 32, I2C (4-pin) | Shows height and status |
+| 3 | 6 × 6 mm tactile switch, 4-pin, ~5 mm tall | ▲ ▼ ■ (measure height, see `sw_yukseklik` in `panel-box.scad`) |
+| 2 | RJ45 keystone jack, Cat5e/Cat6 | One in the main cover, one in the panel |
+| 1 | Straight (T568B) patch cable, 1–1.5 m | Main box ↔ panel |
+
+### Hardware
+
+| Qty | Part | Used for |
+|---|---|---|
+| 4 | M3 heat-set inserts | Cover screw points in the base plate |
+| 4 | M3 × 12 screws | Cover → base plate |
+| 6 | M3 × 8 screws | Motor → motor mount |
+| 10 | M3 or M2.5 × 6 screws | ESP32 (4), relay module (4), LM2596 (2) |
+| 1 + 1 | M3 × 8 set screw + M3 nut | Coupler on the motor shaft |
+| 4 | M2 self-tapping screws (or hot glue) | HC-SR04 on the spacer |
+| 4 | 4 × 16 mm wood screws | Base plate → desk |
+| 4 | 3.5 × 12 mm wood screws | Panel → desk front edge |
+| 1 | 6 mm hex (Allen) key, ~6 cm cut from the straight part | Coupler → desk's hex input |
+
+### Wiring and consumables
+
+- 1 mm² red/black wire for 12 V and the motor; 0.5 mm² for the LM2596 input
+- Female–female Dupont jumper set (signals), a few 4-pin Dupont housings for the removable cover
+- Short coloured cores from an old Ethernet cable (keystone ↔ boards)
+- Heat-shrink tubing, solder, a little hot glue
+
+### Printed parts / filament
+
+- About **250–300 g PETG** for everything (PLA is fine for the boxes, PETG recommended for the coupler)
+- Largest parts are ~136 × 181 mm: needs a bed of at least ~200 × 200 mm
+- Button caps: 2–3 colours with an AMS/MMU, or a single colour with a filament change
+
+### Tools
+
+- Soldering iron, multimeter (to set the LM2596 to 5.0 V before connecting anything)
+- Heat-set insert tip (or the soldering iron), screwdrivers, calipers
+- Keystone punch-down tool (for the panel)
+- Hacksaw / angle grinder to cut the hex key
+
+### Software
+
+- Home Assistant with the ESPHome add-on (or ESPHome CLI), a USB-C cable for the first flash
+- Chrome/Edge for web.esphome.io if you flash from the browser
 
 ## Printed parts
 
