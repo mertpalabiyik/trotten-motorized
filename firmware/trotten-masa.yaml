@@ -1,0 +1,314 @@
+esphome:
+  name: trotten-masa
+  friendly_name: Trotten Masa
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+logger:
+
+# Home Assistant ve WiFi olmadan da çalışsın: bağlantı kopunca yeniden başlatma
+api:
+  encryption:
+    key: !secret api_key
+  reboot_timeout: 0s
+ota:
+  - platform: esphome
+# WiFi bilgisi kart yüklenirken (web.esphome.io) ya da "Trotten Masa" erişim noktasından girilir
+wifi:
+  reboot_timeout: 0s
+  ap:
+    ssid: "Trotten Masa"
+captive_portal:
+improv_serial:
+
+# HA'dan açılıp kapatılır, ayar hafızada kalır. Kapalıyken butonlar yok sayılır, ekran boş kalır.
+switch:
+  - platform: template
+    id: panel_aktif
+    name: "Buton Paneli"
+    icon: mdi:gesture-tap-button
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_OFF
+    entity_category: config
+
+substitutions:
+  min_h: "72.0"      # en alt (cm) – kendi masanda ölç
+  max_h: "122.0"     # en üst (cm)
+
+globals:
+  - id: target_h
+    type: float
+    initial_value: "0"
+  - id: dir          # 1 yukarı, -1 aşağı, 0 duruyor
+    type: int
+    initial_value: "0"
+  - id: basma_ms     # panel tuşuna basıldığı an
+    type: uint32_t
+    initial_value: "0"
+  - id: basildi_hareket   # tuşa basıldığında masa zaten hareket ediyor muydu
+    type: bool
+    initial_value: "false"
+  - id: mesaj
+    type: std::string
+    initial_value: '""'
+  - id: mesaj_ms
+    type: uint32_t
+    initial_value: "0"
+
+# ---------- Röleler (JQC-3FF-S-Z, LOW'da çeker) ----------
+output:
+  - platform: gpio
+    pin: { number: GPIO26, inverted: true }
+    id: relay_a
+  - platform: gpio
+    pin: { number: GPIO27, inverted: true }
+    id: relay_b
+
+# ---------- Yükseklik sensörü ----------
+sensor:
+  - platform: ultrasonic
+    trigger_pin: GPIO5
+    echo_pin: GPIO18           # R1 + R2/R3 bölücüden geliyor
+    name: "Masa Yüksekliği"
+    id: height
+    update_interval: 100ms
+    timeout: 3m
+    unit_of_measurement: "cm"
+    accuracy_decimals: 1
+    filters:
+      - multiply: 100          # m -> cm
+      - offset: 0.0            # kalibrasyon farkı
+      - lambda: |-
+          if (x < 50 || x > 150) return {};
+          return x;
+      - median:
+          window_size: 5
+          send_every: 1
+
+# ---------- Kademeler (HA'dan ayarlanır, hafızada kalır) ----------
+number:
+  - platform: template
+    name: "Kademe 1"
+    id: k1
+    min_value: ${min_h}
+    max_value: ${max_h}
+    step: 0.5
+    unit_of_measurement: "cm"
+    optimistic: true
+    restore_value: true
+    initial_value: 74
+  - platform: template
+    name: "Kademe 2"
+    id: k2
+    min_value: ${min_h}
+    max_value: ${max_h}
+    step: 0.5
+    unit_of_measurement: "cm"
+    optimistic: true
+    restore_value: true
+    initial_value: 95
+  - platform: template
+    name: "Kademe 3"
+    id: k3
+    min_value: ${min_h}
+    max_value: ${max_h}
+    step: 0.5
+    unit_of_measurement: "cm"
+    optimistic: true
+    restore_value: true
+    initial_value: 112
+
+button:
+  - platform: restart
+    name: "Yeniden Başlat"
+    entity_category: config
+  - platform: template
+    name: "Kademe 1'e git"
+    on_press:
+      - lambda: id(move_to).execute(id(k1).state);
+  - platform: template
+    name: "Kademe 2'ye git"
+    on_press:
+      - lambda: id(move_to).execute(id(k2).state);
+  - platform: template
+    name: "Kademe 3'e git"
+    on_press:
+      - lambda: id(move_to).execute(id(k3).state);
+
+# ---------- Motor kontrolü ----------
+script:
+  - id: move_to
+    parameters:
+      h: float
+    then:
+      - lambda: |-
+          float cur = id(height).state;
+          if (isnan(cur)) return;
+          id(target_h) = h;
+          if (h > cur + 0.5) id(go_up).execute();
+          else if (h < cur - 0.5) id(go_down).execute();
+  - id: go_up
+    mode: restart
+    then:
+      - script.stop: go_down
+      - output.turn_off: relay_b
+      - delay: 50ms
+      - lambda: id(dir) = 1;
+      - output.turn_on: relay_a
+      - delay: 40s             # güvenlik süresi
+      - script.execute: motor_stop
+  - id: go_down
+    mode: restart
+    then:
+      - script.stop: go_up
+      - output.turn_off: relay_a
+      - delay: 50ms
+      - lambda: id(dir) = -1;
+      - output.turn_on: relay_b
+      - delay: 40s
+      - script.execute: motor_stop
+  - id: motor_stop
+    then:
+      - script.stop: go_up
+      - script.stop: go_down
+      - output.turn_off: relay_a
+      - output.turn_off: relay_b
+      - lambda: id(dir) = 0;
+  - id: goster          # ekranın alt satırında 2 sn mesaj
+    parameters:
+      m: string
+    then:
+      - lambda: |-
+          id(mesaj) = m;
+          id(mesaj_ms) = millis();
+
+interval:
+  - interval: 50ms
+    then:
+      - lambda: |-
+          float h = id(height).state;
+          if (isnan(h) || id(dir) == 0) return;
+          if (id(dir) == 1  && (h >= id(target_h) || h >= ${max_h})) id(motor_stop).execute();
+          if (id(dir) == -1 && (h <= id(target_h) || h <= ${min_h})) id(motor_stop).execute();
+
+# ---------- HA'da masa ----------
+cover:
+  - platform: template
+    name: "Masa"
+    has_position: true
+    lambda: |-
+      float h = id(height).state;
+      if (isnan(h)) return {};
+      float p = (h - ${min_h}) / (${max_h} - ${min_h});
+      return clamp(p, 0.0f, 1.0f);
+    open_action:
+      - lambda: id(move_to).execute(${max_h});
+    close_action:
+      - lambda: id(move_to).execute(${min_h});
+    stop_action:
+      - script.execute: motor_stop
+    position_action:
+      - lambda: id(move_to).execute(${min_h} + pos * (${max_h} - ${min_h}));
+
+# ---------- Buton paneli ----------
+# ▲ / ▼ kısa bas: en üste / en alta kadar gider (DUR'a ya da herhangi bir tuşa basınca durur)
+# ▲ / ▼ basılı tut: tuttuğun sürece gider, bırakınca durur
+# ■ DUR: her durumda anında durdurur
+binary_sensor:
+  - platform: status
+    id: ha_bagli
+
+  - platform: gpio
+    id: tus_yukari
+    name: "Panel Yukarı"
+    pin: { number: GPIO32, mode: INPUT_PULLUP, inverted: true }
+    filters:
+      - delayed_on_off: 25ms
+    on_press:
+      - lambda: |-
+          if (!id(panel_aktif).state) return;
+          id(basma_ms) = millis();
+          id(basildi_hareket) = id(dir) != 0;
+          if (id(basildi_hareket)) { id(motor_stop).execute(); return; }
+          id(target_h) = ${max_h};
+          id(go_up).execute();
+    on_release:
+      - lambda: |-
+          if (!id(panel_aktif).state) return;
+          if (!id(basildi_hareket) && millis() - id(basma_ms) > 400) id(motor_stop).execute();
+
+  - platform: gpio
+    id: tus_asagi
+    name: "Panel Aşağı"
+    pin: { number: GPIO33, mode: INPUT_PULLUP, inverted: true }
+    filters:
+      - delayed_on_off: 25ms
+    on_press:
+      - lambda: |-
+          if (!id(panel_aktif).state) return;
+          id(basma_ms) = millis();
+          id(basildi_hareket) = id(dir) != 0;
+          if (id(basildi_hareket)) { id(motor_stop).execute(); return; }
+          id(target_h) = ${min_h};
+          id(go_down).execute();
+    on_release:
+      - lambda: |-
+          if (!id(panel_aktif).state) return;
+          if (!id(basildi_hareket) && millis() - id(basma_ms) > 400) id(motor_stop).execute();
+
+  - platform: gpio
+    id: tus_dur
+    name: "Panel Dur"
+    pin: { number: GPIO25, mode: INPUT_PULLUP, inverted: true }
+    filters:
+      - delayed_on: 25ms
+    on_press:
+      - if:
+          condition:
+            switch.is_on: panel_aktif
+          then:
+            - script.execute: motor_stop
+            - lambda: id(goster).execute("DURDU");
+
+# ---------- OLED 0,91" 128x32 ----------
+i2c:
+  sda: GPIO21
+  scl: GPIO22
+  frequency: 100kHz          # panel kablosu ~1 m, düşük hız daha güvenli
+
+font:
+  - file: "gfonts://Roboto Condensed@700"
+    id: buyuk
+    size: 22
+    glyphs: "0123456789.-"
+  - file: "gfonts://Roboto Condensed"
+    id: kucuk
+    size: 10
+    glyphs: " 0123456789.-:cmABCDEFGHIJKLMNOPRSTUVYZ"
+
+display:
+  - platform: ssd1306_i2c
+    model: "SSD1306 128x32"
+    address: 0x3C
+    update_interval: 200ms
+    lambda: |-
+      if (!id(panel_aktif).state) return;   // panel kapalı: ekran boş
+      float h = id(height).state;
+      // üst satır: büyük yükseklik
+      if (isnan(h)) it.print(0, -2, id(buyuk), "--.-");
+      else          it.printf(0, -2, id(buyuk), "%.1f", h);
+      it.print(64, 9, id(kucuk), "cm");
+      // sağ üst: hareket oku
+      if (id(dir) == 1)  it.filled_triangle(110, 18, 127, 18, 118, 2);
+      if (id(dir) == -1) it.filled_triangle(110, 2, 127, 2, 118, 18);
+      // alt satır: geçici mesaj, yoksa hedef / bağlantı durumu
+      if (millis() - id(mesaj_ms) < 2000 && !id(mesaj).empty()) {
+        it.print(0, 21, id(kucuk), id(mesaj).c_str());
+      } else if (id(dir) != 0) {
+        it.printf(0, 21, id(kucuk), "HEDEF %.0f", id(target_h));
+      } else {
+        it.print(0, 21, id(kucuk), id(ha_bagli).state ? "HA BAGLI" : "HA YOK");
+      }

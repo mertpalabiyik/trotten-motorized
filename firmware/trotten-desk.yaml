@@ -1,0 +1,318 @@
+substitutions:
+  name: trotten-desk
+  friendly_name: Trotten Desk
+  min_h: "72.0"      # lowest desk height (cm) – measure yours
+  max_h: "122.0"     # highest desk height (cm)
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+logger:
+
+# Keep working without Home Assistant / WiFi: never reboot on lost connection
+api:
+  encryption:
+    key: !secret api_key
+  reboot_timeout: 0s
+ota:
+  - platform: esphome
+# WiFi credentials are entered while flashing (web.esphome.io / Improv)
+# or through the "Trotten Desk" fallback access point
+wifi:
+  reboot_timeout: 0s
+  ap:
+    ssid: "Trotten Desk"
+captive_portal:
+improv_serial:
+
+# Enable/disable the front panel from Home Assistant (stored across reboots).
+# When off, panel keys are ignored and the OLED stays blank.
+switch:
+  - platform: template
+    id: panel_enabled
+    name: "Button Panel"
+    icon: mdi:gesture-tap-button
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_OFF
+    entity_category: config
+
+globals:
+  - id: target_h
+    type: float
+    initial_value: "0"
+  - id: dir          # 1 up, -1 down, 0 stopped
+    type: int
+    initial_value: "0"
+  - id: press_ms     # when a panel key was pressed
+    type: uint32_t
+    initial_value: "0"
+  - id: was_moving   # was the desk already moving when the key was pressed
+    type: bool
+    initial_value: "false"
+  - id: msg
+    type: std::string
+    initial_value: '""'
+  - id: msg_ms
+    type: uint32_t
+    initial_value: "0"
+
+# ---------- Relays (JQC-3FF-S-Z module, active LOW) ----------
+output:
+  - platform: gpio
+    pin: { number: GPIO26, inverted: true }
+    id: relay_a
+  - platform: gpio
+    pin: { number: GPIO27, inverted: true }
+    id: relay_b
+
+# ---------- Height sensor ----------
+sensor:
+  - platform: ultrasonic
+    trigger_pin: GPIO5
+    echo_pin: GPIO18           # through the R1 / R2+R3 voltage divider
+    name: "Desk Height"
+    id: height
+    update_interval: 100ms
+    timeout: 3m
+    unit_of_measurement: "cm"
+    accuracy_decimals: 1
+    filters:
+      - multiply: 100          # m -> cm
+      - offset: 0.0            # calibration offset
+      - lambda: |-
+          if (x < 50 || x > 150) return {};
+          return x;
+      - median:
+          window_size: 5
+          send_every: 1
+
+# ---------- Presets (set from HA, stored across reboots) ----------
+number:
+  - platform: template
+    name: "Preset 1"
+    id: p1
+    min_value: ${min_h}
+    max_value: ${max_h}
+    step: 0.5
+    unit_of_measurement: "cm"
+    optimistic: true
+    restore_value: true
+    initial_value: 74
+  - platform: template
+    name: "Preset 2"
+    id: p2
+    min_value: ${min_h}
+    max_value: ${max_h}
+    step: 0.5
+    unit_of_measurement: "cm"
+    optimistic: true
+    restore_value: true
+    initial_value: 95
+  - platform: template
+    name: "Preset 3"
+    id: p3
+    min_value: ${min_h}
+    max_value: ${max_h}
+    step: 0.5
+    unit_of_measurement: "cm"
+    optimistic: true
+    restore_value: true
+    initial_value: 112
+
+button:
+  - platform: restart
+    name: "Restart"
+    entity_category: config
+  - platform: template
+    name: "Go to Preset 1"
+    on_press:
+      - lambda: id(move_to).execute(id(p1).state);
+  - platform: template
+    name: "Go to Preset 2"
+    on_press:
+      - lambda: id(move_to).execute(id(p2).state);
+  - platform: template
+    name: "Go to Preset 3"
+    on_press:
+      - lambda: id(move_to).execute(id(p3).state);
+
+# ---------- Motor control ----------
+script:
+  - id: move_to
+    parameters:
+      h: float
+    then:
+      - lambda: |-
+          float cur = id(height).state;
+          if (isnan(cur)) return;
+          id(target_h) = h;
+          if (h > cur + 0.5) id(go_up).execute();
+          else if (h < cur - 0.5) id(go_down).execute();
+  - id: go_up
+    mode: restart
+    then:
+      - script.stop: go_down
+      - output.turn_off: relay_b
+      - delay: 50ms
+      - lambda: id(dir) = 1;
+      - output.turn_on: relay_a
+      - delay: 40s             # safety timeout
+      - script.execute: motor_stop
+  - id: go_down
+    mode: restart
+    then:
+      - script.stop: go_up
+      - output.turn_off: relay_a
+      - delay: 50ms
+      - lambda: id(dir) = -1;
+      - output.turn_on: relay_b
+      - delay: 40s
+      - script.execute: motor_stop
+  - id: motor_stop
+    then:
+      - script.stop: go_up
+      - script.stop: go_down
+      - output.turn_off: relay_a
+      - output.turn_off: relay_b
+      - lambda: id(dir) = 0;
+  - id: show            # 2 s message on the bottom OLED line
+    parameters:
+      m: string
+    then:
+      - lambda: |-
+          id(msg) = m;
+          id(msg_ms) = millis();
+
+interval:
+  - interval: 50ms
+    then:
+      - lambda: |-
+          float h = id(height).state;
+          if (isnan(h) || id(dir) == 0) return;
+          if (id(dir) == 1  && (h >= id(target_h) || h >= ${max_h})) id(motor_stop).execute();
+          if (id(dir) == -1 && (h <= id(target_h) || h <= ${min_h})) id(motor_stop).execute();
+
+# ---------- Desk entity in HA ----------
+cover:
+  - platform: template
+    name: "Desk"
+    has_position: true
+    lambda: |-
+      float h = id(height).state;
+      if (isnan(h)) return {};
+      float p = (h - ${min_h}) / (${max_h} - ${min_h});
+      return clamp(p, 0.0f, 1.0f);
+    open_action:
+      - lambda: id(move_to).execute(${max_h});
+    close_action:
+      - lambda: id(move_to).execute(${min_h});
+    stop_action:
+      - script.execute: motor_stop
+    position_action:
+      - lambda: id(move_to).execute(${min_h} + pos * (${max_h} - ${min_h}));
+
+# ---------- Front button panel ----------
+# ▲ / ▼ short press: travel to top / bottom (any key stops it)
+# ▲ / ▼ hold: move while held, stop on release
+# ■ STOP: always stops immediately
+binary_sensor:
+  - platform: status
+    id: ha_connected
+
+  - platform: gpio
+    id: key_up
+    name: "Panel Up"
+    pin: { number: GPIO32, mode: INPUT_PULLUP, inverted: true }
+    filters:
+      - delayed_on_off: 25ms
+    on_press:
+      - lambda: |-
+          if (!id(panel_enabled).state) return;
+          id(press_ms) = millis();
+          id(was_moving) = id(dir) != 0;
+          if (id(was_moving)) { id(motor_stop).execute(); return; }
+          id(target_h) = ${max_h};
+          id(go_up).execute();
+    on_release:
+      - lambda: |-
+          if (!id(panel_enabled).state) return;
+          if (!id(was_moving) && millis() - id(press_ms) > 400) id(motor_stop).execute();
+
+  - platform: gpio
+    id: key_down
+    name: "Panel Down"
+    pin: { number: GPIO33, mode: INPUT_PULLUP, inverted: true }
+    filters:
+      - delayed_on_off: 25ms
+    on_press:
+      - lambda: |-
+          if (!id(panel_enabled).state) return;
+          id(press_ms) = millis();
+          id(was_moving) = id(dir) != 0;
+          if (id(was_moving)) { id(motor_stop).execute(); return; }
+          id(target_h) = ${min_h};
+          id(go_down).execute();
+    on_release:
+      - lambda: |-
+          if (!id(panel_enabled).state) return;
+          if (!id(was_moving) && millis() - id(press_ms) > 400) id(motor_stop).execute();
+
+  - platform: gpio
+    id: key_stop
+    name: "Panel Stop"
+    pin: { number: GPIO25, mode: INPUT_PULLUP, inverted: true }
+    filters:
+      - delayed_on: 25ms
+    on_press:
+      - if:
+          condition:
+            switch.is_on: panel_enabled
+          then:
+            - script.execute: motor_stop
+            - lambda: id(show).execute("STOPPED");
+
+# ---------- 0.91" OLED 128x32 ----------
+i2c:
+  sda: GPIO21
+  scl: GPIO22
+  frequency: 100kHz          # ~1 m panel cable, lower speed is safer
+
+font:
+  - file: "gfonts://Roboto Condensed@700"
+    id: big
+    size: 22
+    glyphs: "0123456789.-"
+  - file: "gfonts://Roboto Condensed"
+    id: small
+    size: 10
+    glyphs: " 0123456789.-:cmABCDEFGHIJKLMNOPRSTUVWXYZ"
+
+display:
+  - platform: ssd1306_i2c
+    model: "SSD1306 128x32"
+    address: 0x3C
+    update_interval: 200ms
+    lambda: |-
+      if (!id(panel_enabled).state) return;   // panel disabled: blank screen
+      float h = id(height).state;
+      // top line: big height
+      if (isnan(h)) it.print(0, -2, id(big), "--.-");
+      else          it.printf(0, -2, id(big), "%.1f", h);
+      it.print(64, 9, id(small), "cm");
+      // top right: direction arrow
+      if (id(dir) == 1)  it.filled_triangle(110, 18, 127, 18, 118, 2);
+      if (id(dir) == -1) it.filled_triangle(110, 2, 127, 2, 118, 18);
+      // bottom line: temporary message, else target / connection state
+      if (millis() - id(msg_ms) < 2000 && !id(msg).empty()) {
+        it.print(0, 21, id(small), id(msg).c_str());
+      } else if (id(dir) != 0) {
+        it.printf(0, 21, id(small), "TARGET %.0f", id(target_h));
+      } else {
+        it.print(0, 21, id(small), id(ha_connected).state ? "HA OK" : "NO HA");
+      }
