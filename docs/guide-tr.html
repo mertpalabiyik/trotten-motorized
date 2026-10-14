@@ -1,0 +1,993 @@
+<title>TROTTEN Motor Kiti</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: single workbench column, schematic panels framed like a parts drawer, wire colors carry meaning */
+:root{
+  --bg:#F3F4F1;--panel:#FFFFFF;--fg:#1C211F;--muted:#5B6560;--line:#C9CFCB;--accent:#1F6F5C;--codebg:#EBEDE9;
+  --w12:#D1342F;--w5:#D98A0B;--w33:#2E9C8A;--wg:#6B716E;--ws:#2D6FD1;--wm:#C2562A;
+  --warnbg:#FBF1DE;--warnfg:#7A4A05;
+  --f-disp:"Archivo",system-ui,sans-serif;--f-mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121614;--panel:#1A1F1D;--fg:#E6EAE7;--muted:#9AA49F;--line:#2F3633;--accent:#5CC2A6;--codebg:#0E1211;
+  --w12:#FF6B66;--w5:#F2B544;--w33:#57C9B5;--wg:#9AA19D;--ws:#6FA3F2;--wm:#F08A5D;--warnbg:#2E2410;--warnfg:#F2C77A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121614;--panel:#1A1F1D;--fg:#E6EAE7;--muted:#9AA49F;--line:#2F3633;--accent:#5CC2A6;--codebg:#0E1211;
+  --w12:#FF6B66;--w5:#F2B544;--w33:#57C9B5;--wg:#9AA19D;--ws:#6FA3F2;--wm:#F08A5D;--warnbg:#2E2410;--warnfg:#F2C77A;color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-disp);font-size:16px;line-height:1.6}
+.wrap{max-width:900px;margin:0 auto;padding-inline:16px;padding-block:32px 64px;display:flex;flex-direction:column;gap:40px}
+header{display:flex;flex-direction:column;gap:8px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-size:clamp(28px,5vw,40px);line-height:1.15;margin:0;font-weight:700;text-wrap:balance}
+h2{font-size:22px;margin:0;font-weight:700;text-wrap:balance}
+h3{font-size:16px;margin:0;font-weight:500}
+p{margin:0;max-width:68ch}
+.lead{color:var(--muted);font-size:17px}
+section{display:flex;flex-direction:column;gap:14px;min-width:0}
+.spec{display:flex;flex-wrap:wrap;gap:8px;font-family:var(--f-mono);font-size:13px}
+.spec span{border:1px solid var(--line);padding:3px 10px;border-radius:4px;background:var(--panel)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px;min-width:0}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-weight:500;color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+td code,p code,li code{font-family:var(--f-mono);font-size:13px;background:var(--codebg);padding:1px 5px;border-radius:3px}
+.tag{font-family:var(--f-mono);font-size:12px;padding:2px 8px;border-radius:999px;white-space:nowrap;border:1px solid var(--line)}
+.t-have{color:var(--accent);border-color:var(--accent)}
+.t-buy{color:var(--w5);border-color:var(--w5)}
+.t-print{color:var(--ws);border-color:var(--ws)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted)}
+.legend i{display:inline-block;width:22px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
+svg text{font-family:var(--f-mono)}
+.blk{fill:var(--panel);stroke:var(--fg);stroke-width:1.2}
+.blk2{fill:var(--codebg);stroke:var(--line);stroke-width:1}
+.lb{fill:var(--fg);font-size:13px;font-weight:600}
+.sb{fill:var(--muted);font-size:11.5px}
+.w{fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.w12{stroke:var(--w12)}.w5{stroke:var(--w5)}.w33{stroke:var(--w33)}.wg{stroke:var(--wg)}.ws{stroke:var(--ws)}.wm{stroke:var(--wm)}
+.dot{stroke:none}.d12{fill:var(--w12)}.d5{fill:var(--w5)}.ds{fill:var(--ws)}.dg{fill:var(--wg)}
+.res{fill:var(--panel);stroke:var(--fg);stroke-width:1.2}
+.bdg{fill:var(--accent)}
+.bdt{fill:var(--panel);font-size:10px;font-weight:600;font-family:var(--f-mono)}
+.note{background:var(--warnbg);color:var(--warnfg);border-radius:6px;padding:12px 14px;font-size:14.5px}
+.note strong{font-weight:700}
+ol.steps{margin:0;padding:0;list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:12px}
+ol.steps li{counter-increment:s;display:grid;grid-template-columns:34px 1fr;gap:12px;align-items:start}
+ol.steps li::before{content:counter(s);font-family:var(--f-mono);font-weight:600;font-size:14px;width:28px;height:28px;border-radius:50%;border:1.5px solid var(--accent);color:var(--accent);display:grid;place-items:center}
+ol.steps li div{min-width:0;display:flex;flex-direction:column;gap:2px}
+ol.steps li p{color:var(--muted);font-size:15px}
+.codehead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+button{font-family:var(--f-mono);font-size:13px;padding:6px 12px;border-radius:4px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer}
+button:hover{background:var(--accent);color:var(--bg)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+pre{margin:0;background:var(--codebg);border:1px solid var(--line);border-radius:6px;padding:14px;overflow-x:auto;font-family:var(--f-mono);font-size:12.5px;line-height:1.55;max-height:560px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.muted{color:var(--muted)}
+.tt td:nth-child(-n+2){font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">IKEA TROTTEN · ESPHome · Home Assistant</div>
+  <h1>TROTTEN Motor Kiti</h1>
+  <p class="lead">Manuel krankı 12V redüktörlü motorla değiştiriyoruz. Motor, kartlar ve sensör masanın arkasındaki tek bir kutuda. ESP32 iki röleyle motorun yönünü seçiyor, HC-SR04 yüksekliği ölçüyor, masa Home Assistant'ta tek bir cihaz olarak görünüyor.</p>
+  <div class="spec"><span>Krank girişi: 6 mm altıgen</span><span>Masa aralığı: ~72–122 cm</span><span>Besleme: 12V tek adaptör</span><span>Buton paneli + OLED, HA olmadan da çalışır</span></div>
+</header>
+
+<section>
+  <h2>Parça listesi</h2>
+  <div class="panel scroll">
+  <table>
+    <thead><tr><th>Parça</th><th>Durum</th><th>Görevi</th></tr></thead>
+    <tbody>
+      <tr><td>ESP32-WROOM DevKit (30 pin, USB-C)</td><td><span class="tag t-have">Elinde</span></td><td>Beyin. WiFi ile HA'ya bağlanır. 4 köşe deliğinden ayaklara vidalanır.</td></tr>
+      <tr><td>2'li röle modülü (JQC-3FF-S-Z, 5V bobin)</td><td><span class="tag t-have">Elinde</span></td><td>Motor yönü. 10A kontak, H-köprü gibi bağlanır.</td></tr>
+      <tr><td>LM2596 HW-411</td><td><span class="tag t-have">Elinde</span></td><td>12V → 5,0V. ESP32, röle bobinleri, HC-SR04.</td></tr>
+      <tr><td>HC-SR04</td><td><span class="tag t-have">Elinde</span></td><td>Masa yüksekliği.</td></tr>
+      <tr><td>10k direnç × 3</td><td><span class="tag t-have">Elinde</span></td><td>ECHO hattı için 5V → 3,3V bölücü. Tek tane varsa 10k pot kullan.</td></tr>
+      <tr><td>4A sigorta + yuva</td><td><span class="tag t-have">Elinde</span></td><td>12V hattının hemen başına.</td></tr>
+      <tr><td>37GB555 12V redüktörlü motor</td><td><span class="tag t-have">Elinde</span></td><td>Krankın yerine döner.</td></tr>
+      <tr><td>12V adaptör (en az 3A, ideal 5A)</td><td><span class="tag t-buy">Kontrol et</span></td><td>Tek güç kaynağı.</td></tr>
+      <tr><td>6×7 mm esnek kaplin (D19L25)</td><td><span class="tag t-buy">Alınacak</span></td><td>Motor mili ile altıgen çubuğu birleştirir.</td></tr>
+      <tr><td>6 mm alyan anahtarı</td><td><span class="tag t-buy">Kes</span></td><td>Düz kısmından yaklaşık 6 cm kesilir: kaplinden çıkıp krank yuvasına girer.</td></tr>
+      <tr><td>body1-revize.stl, kapak-revize.stl</td><td><span class="tag t-print">Yazdır</span></td><td>Motor, kartlar ve sensör tek kutuda. pashiran'ın Body1'inden uyarlandı.</td></tr>
+      <tr><td>M3 sıcak gömme insert × 4</td><td><span class="tag t-buy">Alınacak</span></td><td>Body1'deki kapak vidası delikleri.</td></tr>
+      <tr><td>Vidalar</td><td><span class="tag t-buy">Alınacak</span></td><td>M3×8 × 6 (motor), M3×12 × 4 (kapak), M3 veya M2.5×6 × 10 (kartlar), 4×16 ahşap vidası × 4 (tabla).</td></tr>
+      <tr><td>Wago 221 klemens: 3'lü × 1, 5'li × 1</td><td><span class="tag t-buy">Alınacak</span></td><td>12V ve GND dağıtımı. Yerine klemens bloğu da olur.</td></tr>
+      <tr><td>Panel tipi sigorta yuvası (5×20, 12 mm gövde)</td><td><span class="tag t-buy">Alınacak</span></td><td>Kapağın arka duvarına somunla takılır, sigorta dışarıdan kapağı açmadan değişir.</td></tr>
+      <tr><td>Panel tipi DC jak (DC-022, 5,5×2,1, 11 mm gövde)</td><td><span class="tag t-buy">Alınacak</span></td><td>Adaptör girişi, sigortanın yanında.</td></tr>
+      <tr><td>Dişi-dişi jumper seti, makaron</td><td><span class="tag t-buy">Kontrol et</span></td><td>ESP32 pinleri, bölücü dirençleri.</td></tr>
+      <tr><td>0,91" OLED (SSD1306, 128×32, I2C)</td><td><span class="tag t-have">Elinde</span></td><td>Panelde yükseklik ve durum gösterir.</td></tr>
+      <tr><td>6×6 mm tactile switch (4 bacaklı, ~5 mm boy) × 3</td><td><span class="tag t-have">Elinde</span></td><td>▲, ▼ ve ■ DUR. Panelin içindeki yuvalara oturur.</td></tr>
+      <tr><td>Buton başlıkları (iki renk)</td><td><span class="tag t-print">Yazdır</span></td><td>3 başlık (▲ ▼ ■), altlarındaki yuvayla switch'in siyah çubuğuna oturur. AMS'li yazıcıda <code>buton-basligi-AMS.3mf</code> (renkler atanmış) ya da <code>buton-taban / ust_yon / ust_dur.stl</code>: taban ve işaretler 1. renk, ▲▼ üstü 2. renk, ■ üstü 3. renk, tek renkli yazıcıda <code>buton-basligi-kabartma.stl</code>: 5,6 mm'de duraklat, filamenti değiştir.</td></tr>
+      <tr><td>RJ45 keystone jack (Cat5e/Cat6) × 2</td><td><span class="tag t-buy">Alınacak</span></td><td>Biri ana kutunun kapağına, biri panel kutusunun arka duvarına takılır.</td></tr>
+      <tr><td>Düz (straight) patch kablo, ~1–1,5 m</td><td><span class="tag t-buy">Kontrol et</span></td><td>Kutu ile panel arası. İki uç da sökülüp takılabilir.</td></tr>
+      <tr><td>Kısa renkli damarlar (eski ethernet kablosundan)</td><td><span class="tag t-buy">Kontrol et</span></td><td>Keystone ile ESP32 / panel arası, kutuların içinde.</td></tr>
+      <tr><td>panel-kutusu.stl</td><td><span class="tag t-print">Yazdır</span></td><td>Masanın ön kenarının altına 4 ahşap vidasıyla (3,5×12) takılır.</td></tr>
+      <tr><td>Kablo: 1 mm² güç, jumper sinyal</td><td><span class="tag t-buy">Kontrol et</span></td><td>12V ve motor hattı kalın olmalı.</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="muted">Kenarda kalanlar: Nano, Uno, L298N, HW-307, 220R. L298N'yi motoru masa başında ilk denemek için kullanabilirsin.</p>
+</section>
+
+<section>
+  <h2>1 · Güç dağıtımı</h2>
+  <p>Tek 12V adaptör. Sigortadan sonra iki kola ayrılıyor: röle kontakları (motor gücü) ve LM2596 (elektronik).</p>
+  <div class="legend"><span><i style="background:var(--w12)"></i>12V</span><span><i style="background:var(--w5)"></i>5V</span><span><i style="background:var(--w33)"></i>3,3V</span><span><i style="background:var(--wg)"></i>GND</span></div>
+  <div class="panel scroll">
+  <svg viewBox="0 0 760 410" width="100%" style="min-width:620px" role="img" aria-label="Güç dağıtım şeması">
+    <rect class="blk" x="20" y="40" width="130" height="56" rx="4"/>
+    <text class="lb" x="85" y="64" text-anchor="middle">12V adaptör</text>
+    <text class="sb" x="85" y="82" text-anchor="middle">en az 3A</text>
+    <rect class="blk" x="190" y="48" width="96" height="40" rx="4"/>
+    <text class="lb" x="238" y="73" text-anchor="middle">Sigorta 4A</text>
+    <path class="w w12" d="M150 68H190"/>
+    <path class="w w12" d="M286 68H330"/>
+    <circle class="dot d12" cx="330" cy="68" r="4"/>
+    <path class="w w12" d="M330 68V40H560"/>
+    <path class="w w12" d="M330 68V168H360"/>
+    <rect class="blk" x="560" y="16" width="180" height="56" rx="4"/>
+    <text class="lb" x="650" y="40" text-anchor="middle">Röle 1 + 2 · NO</text>
+    <text class="sb" x="650" y="58" text-anchor="middle">motor gücü</text>
+    <rect class="blk" x="360" y="140" width="150" height="56" rx="4"/>
+    <text class="lb" x="435" y="164" text-anchor="middle">LM2596 HW-411</text>
+    <text class="sb" x="435" y="182" text-anchor="middle">12V → 5,0V</text>
+    <path class="w w5" d="M510 168H540"/>
+    <circle class="dot d5" cx="540" cy="168" r="4"/>
+    <path class="w w5" d="M540 142V254"/>
+    <path class="w w5" d="M540 142H580M540 198H580M540 254H580"/>
+    <rect class="blk" x="580" y="120" width="160" height="44" rx="4"/>
+    <text class="lb" x="660" y="147" text-anchor="middle">ESP32 · 5V/VIN</text>
+    <rect class="blk" x="580" y="176" width="160" height="44" rx="4"/>
+    <text class="lb" x="660" y="203" text-anchor="middle">Röle · JD-VCC</text>
+    <rect class="blk" x="580" y="232" width="160" height="44" rx="4"/>
+    <text class="lb" x="660" y="259" text-anchor="middle">HC-SR04 · VCC</text>
+    <rect class="blk2" x="360" y="300" width="150" height="44" rx="4"/>
+    <text class="lb" x="435" y="327" text-anchor="middle">ESP32 · 3V3</text>
+    <path class="w w33" d="M510 322H580"/>
+    <rect class="blk" x="580" y="300" width="160" height="44" rx="4"/>
+    <text class="lb" x="660" y="320" text-anchor="middle">Röle · VCC</text>
+    <text class="sb" x="660" y="336" text-anchor="middle">opto tarafı</text>
+    <path class="w wg" d="M20 384H740"/>
+    <text class="sb" x="20" y="404">Ortak GND: adaptör −, LM2596 IN− / OUT−, ESP32 GND, röle GND, HC-SR04 GND, bölücü</text>
+  </svg>
+  </div>
+  <div class="note"><strong>Önce LM2596'yı ayarla.</strong> Çıkışa hiçbir şey bağlamadan multimetreyle 5,0V'a getir. Fabrika ayarı genelde girişe yakındır ve ayarsız bağlanan ESP32 yanar. Ayardan sonra trimpota bir damla oje sür.</div>
+</section>
+
+<section>
+  <h2>2 · Motor: iki röleyle H-köprü</h2>
+  <p>Her röle motorun bir ucunu ya +12V'a ya GND'ye bağlar. İki röle aynı anda çekse bile kısa devre oluşmaz, motor sadece frenlenir.</p>
+  <div class="panel scroll">
+  <svg viewBox="0 0 760 300" width="100%" style="min-width:620px" role="img" aria-label="Röle H-köprü bağlantısı">
+    <text class="sb" x="60" y="36">+12V (sigortadan sonra)</text>
+    <path class="w w12" d="M60 50H700"/>
+    <path class="w wg" d="M60 250H700"/>
+    <text class="sb" x="60" y="276">GND</text>
+    <rect class="blk" x="150" y="100" width="180" height="100" rx="4"/>
+    <text class="sb" x="240" y="120" text-anchor="middle">NO</text>
+    <text class="lb" x="225" y="155" text-anchor="middle">Röle 1</text>
+    <text class="sb" x="225" y="171" text-anchor="middle">IN1 · D26</text>
+    <text class="sb" x="240" y="192" text-anchor="middle">NC</text>
+    <text class="sb" x="322" y="146" text-anchor="end">COM</text>
+    <rect class="blk" x="430" y="100" width="180" height="100" rx="4"/>
+    <text class="sb" x="520" y="120" text-anchor="middle">NO</text>
+    <text class="lb" x="535" y="155" text-anchor="middle">Röle 2</text>
+    <text class="sb" x="535" y="171" text-anchor="middle">IN2 · D27</text>
+    <text class="sb" x="520" y="192" text-anchor="middle">NC</text>
+    <text class="sb" x="438" y="146">COM</text>
+    <path class="w w12" d="M240 100V50"/><circle class="dot d12" cx="240" cy="50" r="4"/>
+    <path class="w w12" d="M520 100V50"/><circle class="dot d12" cx="520" cy="50" r="4"/>
+    <path class="w wg" d="M240 200V250"/><circle class="dot dg" cx="240" cy="250" r="4"/>
+    <path class="w wg" d="M520 200V250"/><circle class="dot dg" cx="520" cy="250" r="4"/>
+    <path class="w wm" d="M330 150H350"/>
+    <path class="w wm" d="M410 150H430"/>
+    <circle class="blk" cx="380" cy="150" r="30"/>
+    <text class="lb" x="380" y="155" text-anchor="middle">M</text>
+    <text class="sb" x="352" y="138" text-anchor="end">A</text>
+    <text class="sb" x="408" y="138">B</text>
+  </svg>
+  </div>
+  <div class="grid2">
+    <div class="panel scroll">
+      <table class="tt">
+        <thead><tr><th>Röle 1</th><th>Röle 2</th><th>Sonuç</th></tr></thead>
+        <tbody>
+          <tr><td>Çekti</td><td>Bıraktı</td><td>Yukarı (A=+12V, B=GND)</td></tr>
+          <tr><td>Bıraktı</td><td>Çekti</td><td>Aşağı (A=GND, B=+12V)</td></tr>
+          <tr><td>Bıraktı</td><td>Bıraktı</td><td>Dur, iki uç GND'de (fren)</td></tr>
+          <tr><td>Çekti</td><td>Çekti</td><td>Dur, iki uç +12V'ta (fren)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="panel" style="display:flex;flex-direction:column;gap:8px">
+      <h3>Röle modülü jumper ayarı</h3>
+      <p class="muted" style="font-size:15px">Jumper'lı 3'lü header'da bir GND ve iki VCC var (bazı kartlarda biri JD-VCC yazar). Jumper'ı çıkar ve multimetreyle ölç: 4'lü header'daki VCC ile bip öten pin <strong>sinyal VCC</strong>'sidir, buraya ESP32'nin 3V3'ü gider. Diğeri <strong>bobin VCC</strong>'sidir (JD-VCC), buraya 5V gider. Böylece 3,3V sinyal röleyi temiz bırakır. H/L jumper'ı varsa L konumunda kalsın.</p>
+      <p class="muted" style="font-size:15px">Masa ters yöne gidiyorsa motorun iki kablosunu COM'lar arasında yer değiştir.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>3 · Sinyal bağlantıları</h2>
+  <p>ESP32'den rölelere, sensöre ve butonlara giden ince kablolar. Pin adları kartın üstündeki yazılardır (D26), parantez içindekiler YAML'daki karşılıklarıdır (GPIO26).</p>
+  <div class="legend"><span><i style="background:var(--ws)"></i>Sinyal</span><span><i style="background:var(--wg)"></i>GND</span></div>
+  <div class="panel scroll">
+  <svg viewBox="0 0 760 400" width="100%" style="min-width:620px" role="img" aria-label="ESP32 sinyal bağlantıları">
+    <rect class="blk" x="40" y="30" width="170" height="350" rx="4"/>
+    <text class="sb" x="200" y="84" text-anchor="end">D26 (GPIO26)</text>
+    <text class="sb" x="200" y="124" text-anchor="end">D27 (GPIO27)</text>
+    <text class="sb" x="200" y="179" text-anchor="end">D5 (GPIO5)</text>
+    <text class="sb" x="200" y="214" text-anchor="end">D18 (GPIO18)</text>
+    <text class="sb" x="200" y="334" text-anchor="end">D32 (GPIO32)</text>
+    <text class="sb" x="200" y="359" text-anchor="end">D33 (GPIO33)</text>
+    <text class="lb" x="100" y="262" text-anchor="middle">ESP32</text>
+    <text class="sb" x="100" y="280" text-anchor="middle">WROOM</text>
+
+    <rect class="blk" x="520" y="50" width="200" height="90" rx="4"/>
+    <text class="sb" x="530" y="84">IN1</text>
+    <text class="sb" x="530" y="124">IN2</text>
+    <text class="lb" x="650" y="100" text-anchor="middle">Röle</text>
+    <text class="sb" x="650" y="116" text-anchor="middle">modülü</text>
+    <path class="w ws" d="M210 80H520M210 120H520"/>
+
+    <rect class="blk" x="560" y="155" width="160" height="75" rx="4"/>
+    <text class="sb" x="570" y="179">TRIG</text>
+    <text class="sb" x="570" y="214">ECHO</text>
+    <text class="lb" x="672" y="197" text-anchor="middle">HC-SR04</text>
+    <path class="w ws" d="M210 175H560"/>
+    <path class="w ws" d="M560 210H460"/>
+    <rect class="res" x="400" y="202" width="60" height="16" rx="2"/>
+    <text class="sb" x="430" y="196" text-anchor="middle">R1 10k</text>
+    <path class="w ws" d="M400 210H210"/>
+    <circle class="dot ds" cx="320" cy="210" r="4"/>
+    <text class="sb" x="250" y="200">≈3,3V</text>
+    <path class="w wg" d="M320 214V232"/>
+    <rect class="res" x="312" y="232" width="16" height="32" rx="2"/>
+    <path class="w wg" d="M320 264V270"/>
+    <rect class="res" x="312" y="270" width="16" height="32" rx="2"/>
+    <text class="sb" x="338" y="252">R2 10k</text>
+    <text class="sb" x="338" y="290">R3 10k</text>
+    <text class="sb" x="345" y="316">ESP32 GND</text>
+    <path class="w wg" d="M320 302V310"/>
+    <path class="w wg" d="M304 310H336M309 316H331M314 322H326"/>
+
+    <rect class="blk" x="520" y="315" width="200" height="55" rx="4"/>
+    <text class="lb" x="620" y="338" text-anchor="middle">Butonlar</text>
+    <text class="sb" x="620" y="356" text-anchor="middle">diğer uç → GND</text>
+    <path class="w ws" d="M210 330H520M210 355H520"/>
+  </svg>
+  </div>
+  <div class="panel" style="display:flex;flex-direction:column;gap:8px">
+    <h3>Bölücü: 10k + 10k ne işe yarıyor?</h3>
+    <p class="muted" style="font-size:15px">HC-SR04'ün ECHO çıkışı 5V verir, ESP32'nin pinleri ise en fazla 3,3V kaldırır. Üç direnç bu 5V'u düşürür: R1 ECHO ile D18 arasına seri girer; R2 ve R3 seri bağlanıp D18'den GND'ye gider. R2 + R3 birlikte 20k eder, elinde 20k direnç olmadığı için iki tane 10k kullanıyoruz.</p>
+    <p class="muted" style="font-size:15px;font-family:var(--f-mono)">D18 gerilimi = 5V × 20k / (10k + 20k) = 3,33V</p>
+  </div>
+</section>
+
+<section>
+  <h2>4 · Kutu içinde yerleşim</h2>
+  <p>Masanın altından bakış, kaplin tarafı üstte. Her pinin yanındaki numara, 5. bölümdeki kablo listesinin satırıdır: aynı numarayı taşıyan pinleri birbirine bağla. ESP32'nin pin sırası 30 pinli USB-C kartın gerçek dizilişidir. Kart bileşen yüzü yere bakacak şekilde durur. Panelin I2C hatları D21 (24) ve D22 (25) sol sütunun alt kısmında, çizimin dışında kalır.</p>
+  <div class="panel scroll">
+    <svg viewBox="0 0 460 640" width="100%" style="min-width:420px;max-width:600px;display:block;margin:0 auto" role="img" aria-label="Kutu içi yerleşim ve pin numaraları">
+    <text class="sb" x="290" y="14" text-anchor="middle">ön kenar: kaplin ve krank yuvası tarafı</text>
+    <rect class="blk2" x="20" y="40" width="420" height="540" rx="3"/>
+    <path d="M20 580H440" style="stroke:var(--fg);stroke-width:3"/>
+    <rect x="87" y="0" width="6" height="96" style="fill:var(--muted)"/>
+    <rect class="blk" x="68" y="96" width="44" height="54" rx="3"/><text class="sb" x="90" y="127" text-anchor="middle">kaplin</text>
+    <rect class="blk" x="30" y="150" width="120" height="22" rx="2"/><text class="sb" x="90" y="165" text-anchor="middle">motor plakası</text>
+    <rect class="blk" x="55" y="172" width="70" height="196" rx="6" style="fill:var(--codebg)"/>
+    <text class="lb" x="90" y="270" text-anchor="middle">Motor</text>
+    <text class="sb" x="75" y="362" text-anchor="middle">1</text><text class="sb" x="105" y="362" text-anchor="middle">2</text>
+    <g><rect class="bdg" x="67.0" y="378" width="16.0" height="16" rx="8"/><text class="bdt" x="75" y="389.6" text-anchor="middle">8</text></g>
+    <g><rect class="bdg" x="97.0" y="378" width="16.0" height="16" rx="8"/><text class="bdt" x="105" y="389.6" text-anchor="middle">9</text></g>
+    <rect class="blk" x="170" y="62" width="75" height="140" rx="2"/>
+    <text class="lb" x="207" y="128" text-anchor="middle">LM2596</text><text class="sb" x="207" y="144" text-anchor="middle">5,0V</text>
+    <text class="sb" x="187" y="80" text-anchor="middle">OUT+</text><text class="sb" x="228" y="80" text-anchor="middle">OUT−</text>
+    <text class="sb" x="187" y="194" text-anchor="middle">IN+</text><text class="sb" x="228" y="194" text-anchor="middle">IN−</text>
+    <g><rect class="bdg" x="167.5" y="42" width="39.0" height="16" rx="8"/><text class="bdt" x="187" y="53.6" text-anchor="middle">10–12</text></g>
+    <g><rect class="bdg" x="208.5" y="26" width="39.0" height="16" rx="8"/><text class="bdt" x="228" y="37.6" text-anchor="middle">13–15</text></g>
+    <path d="M228 42V62" style="stroke:var(--muted);stroke-width:1"/>
+    <g><rect class="bdg" x="179.0" y="208" width="16.0" height="16" rx="8"/><text class="bdt" x="187" y="219.6" text-anchor="middle">4</text></g>
+    <g><rect class="bdg" x="220.0" y="208" width="16.0" height="16" rx="8"/><text class="bdt" x="228" y="219.6" text-anchor="middle">7</text></g>
+    <rect class="blk" x="290" y="62" width="115" height="186" rx="2"/>
+    <rect x="337" y="54" width="22" height="10" style="fill:var(--muted)"/><text class="sb" x="348" y="50" text-anchor="middle">USB</text>
+    <text class="lb" x="297" y="88" style="font-size:11px">3V3</text>
+    <g><rect class="bdg" x="247.5" y="76" width="39.0" height="16" rx="8"/><text class="bdt" x="267" y="87.6" text-anchor="middle">16·22</text></g>
+    <text class="lb" x="297" y="104" style="font-size:11px">GND</text>
+    <g><rect class="bdg" x="259.0" y="92" width="16.0" height="16" rx="8"/><text class="bdt" x="267" y="103.6" text-anchor="middle">21</text></g>
+    <text class="sb" x="297" y="120" style="font-size:11px">D15</text>
+    <text class="sb" x="297" y="136" style="font-size:11px">D2</text>
+    <text class="sb" x="297" y="152" style="font-size:11px">D4</text>
+    <text class="sb" x="297" y="168" style="font-size:11px">RX2</text>
+    <text class="sb" x="297" y="184" style="font-size:11px">TX2</text>
+    <text class="lb" x="297" y="200" style="font-size:11px">D5</text>
+    <g><rect class="bdg" x="259.0" y="188" width="16.0" height="16" rx="8"/><text class="bdt" x="267" y="199.6" text-anchor="middle">19</text></g>
+    <text class="lb" x="297" y="216" style="font-size:11px">D18</text>
+    <g><rect class="bdg" x="247.5" y="204" width="39.0" height="16" rx="8"/><text class="bdt" x="267" y="215.6" text-anchor="middle">20·21</text></g>
+    <text class="lb" x="398" y="88" text-anchor="end" style="font-size:11px">VIN</text>
+    <g><rect class="bdg" x="416.0" y="76" width="16.0" height="16" rx="8"/><text class="bdt" x="424" y="87.6" text-anchor="middle">10</text></g>
+    <text class="lb" x="398" y="104" text-anchor="end" style="font-size:11px">GND</text>
+    <g><rect class="bdg" x="408.5" y="92" width="39.0" height="16" rx="8"/><text class="bdt" x="428" y="103.6" text-anchor="middle">13·23</text></g>
+    <text class="sb" x="398" y="120" text-anchor="end" style="font-size:11px">D13</text>
+    <text class="sb" x="398" y="136" text-anchor="end" style="font-size:11px">D12</text>
+    <text class="sb" x="398" y="152" text-anchor="end" style="font-size:11px">D14</text>
+    <text class="lb" x="398" y="168" text-anchor="end" style="font-size:11px">D27</text>
+    <g><rect class="bdg" x="416.0" y="156" width="16.0" height="16" rx="8"/><text class="bdt" x="424" y="167.6" text-anchor="middle">18</text></g>
+    <text class="lb" x="398" y="184" text-anchor="end" style="font-size:11px">D26</text>
+    <g><rect class="bdg" x="416.0" y="172" width="16.0" height="16" rx="8"/><text class="bdt" x="424" y="183.6" text-anchor="middle">17</text></g>
+    <text class="sb" x="398" y="200" text-anchor="end" style="font-size:11px">D25</text>
+    <text class="lb" x="398" y="216" text-anchor="end" style="font-size:11px">D33</text>
+    <g><rect class="bdg" x="416.0" y="188" width="16.0" height="16" rx="8"/><text class="bdt" x="424" y="199.6" text-anchor="middle">26</text></g><g><rect class="bdg" x="416.0" y="204" width="16.0" height="16" rx="8"/><text class="bdt" x="424" y="215.6" text-anchor="middle">28</text></g>
+    <text class="lb" x="398" y="232" text-anchor="end" style="font-size:11px">D32</text>
+    <g><rect class="bdg" x="416.0" y="220" width="16.0" height="16" rx="8"/><text class="bdt" x="424" y="231.6" text-anchor="middle">27</text></g>
+    <text class="lb" x="348" y="214" text-anchor="middle">ESP32</text>
+    <rect class="blk" x="225" y="290" width="185" height="150" rx="2"/>
+    <text class="sb" x="240" y="308" text-anchor="middle" style="font-size:10.5px">GND</text>
+    <text class="sb" x="262" y="308" text-anchor="middle" style="font-size:10.5px">IN1</text>
+    <g><rect class="bdg" x="254.0" y="268" width="16.0" height="16" rx="8"/><text class="bdt" x="262" y="279.6" text-anchor="middle">17</text></g>
+    <text class="sb" x="284" y="308" text-anchor="middle" style="font-size:10.5px">IN2</text>
+    <g><rect class="bdg" x="276.0" y="268" width="16.0" height="16" rx="8"/><text class="bdt" x="284" y="279.6" text-anchor="middle">18</text></g>
+    <text class="sb" x="306" y="308" text-anchor="middle" style="font-size:10.5px">VCC</text>
+    <g><rect class="bdg" x="298.0" y="268" width="16.0" height="16" rx="8"/><text class="bdt" x="306" y="279.6" text-anchor="middle">16</text></g>
+    <text class="sb" x="358" y="308" text-anchor="middle" style="font-size:10.5px">GND</text>
+    <g><rect class="bdg" x="350.0" y="268" width="16.0" height="16" rx="8"/><text class="bdt" x="358" y="279.6" text-anchor="middle">14</text></g>
+    <text class="sb" x="388" y="308" text-anchor="middle" style="font-size:10.5px">JD</text>
+    <g><rect class="bdg" x="380.0" y="268" width="16.0" height="16" rx="8"/><text class="bdt" x="388" y="279.6" text-anchor="middle">11</text></g>
+    <text class="sb" x="240" y="276" text-anchor="middle" style="font-size:10.5px">boş</text>
+    <rect x="345" y="296" width="54" height="18" rx="3" style="fill:none;stroke:var(--muted);stroke-dasharray:3 2"/>
+    <text class="lb" x="262" y="372" text-anchor="middle">Röle 2</text><text class="lb" x="358" y="372" text-anchor="middle">Röle 1</text>
+    <path d="M310 330V425" style="stroke:var(--line);stroke-width:1"/>
+    <text class="sb" x="240" y="432" text-anchor="middle" style="font-size:10px">NO2</text>
+    <g><rect class="bdg" x="232.0" y="448" width="16.0" height="16" rx="8"/><text class="bdt" x="240" y="459.6" text-anchor="middle">3</text></g>
+    <text class="sb" x="262" y="432" text-anchor="middle" style="font-size:10px">COM2</text>
+    <g><rect class="bdg" x="254.0" y="448" width="16.0" height="16" rx="8"/><text class="bdt" x="262" y="459.6" text-anchor="middle">9</text></g>
+    <text class="sb" x="284" y="432" text-anchor="middle" style="font-size:10px">NC2</text>
+    <g><rect class="bdg" x="276.0" y="448" width="16.0" height="16" rx="8"/><text class="bdt" x="284" y="459.6" text-anchor="middle">6</text></g>
+    <text class="sb" x="336" y="432" text-anchor="middle" style="font-size:10px">NO1</text>
+    <g><rect class="bdg" x="328.0" y="448" width="16.0" height="16" rx="8"/><text class="bdt" x="336" y="459.6" text-anchor="middle">3</text></g>
+    <text class="sb" x="358" y="432" text-anchor="middle" style="font-size:10px">COM1</text>
+    <g><rect class="bdg" x="350.0" y="448" width="16.0" height="16" rx="8"/><text class="bdt" x="358" y="459.6" text-anchor="middle">8</text></g>
+    <text class="sb" x="380" y="432" text-anchor="middle" style="font-size:10px">NC1</text>
+    <g><rect class="bdg" x="372.0" y="448" width="16.0" height="16" rx="8"/><text class="bdt" x="380" y="459.6" text-anchor="middle">6</text></g>
+    <rect class="blk" x="40" y="430" width="100" height="26" rx="3"/><text class="sb" x="90" y="447" text-anchor="middle">Wago 12V</text>
+    <g><rect class="bdg" x="148.0" y="435" width="16.0" height="16" rx="8"/><text class="bdt" x="156" y="446.6" text-anchor="middle">2</text></g>
+    <g><rect class="bdg" x="168.0" y="435" width="16.0" height="16" rx="8"/><text class="bdt" x="176" y="446.6" text-anchor="middle">3</text></g>
+    <g><rect class="bdg" x="188.0" y="435" width="16.0" height="16" rx="8"/><text class="bdt" x="196" y="446.6" text-anchor="middle">4</text></g>
+    <rect class="blk" x="40" y="480" width="100" height="26" rx="3"/><text class="sb" x="90" y="497" text-anchor="middle">Wago GND</text>
+    <g><rect class="bdg" x="148.0" y="485" width="16.0" height="16" rx="8"/><text class="bdt" x="156" y="496.6" text-anchor="middle">5</text></g>
+    <g><rect class="bdg" x="168.0" y="485" width="16.0" height="16" rx="8"/><text class="bdt" x="176" y="496.6" text-anchor="middle">6</text></g>
+    <g><rect class="bdg" x="188.0" y="485" width="16.0" height="16" rx="8"/><text class="bdt" x="196" y="496.6" text-anchor="middle">7</text></g>
+    <rect x="290" y="500" width="125" height="58" rx="3" style="fill:none;stroke:var(--muted);stroke-dasharray:5 4"/>
+    <text class="sb" x="306" y="518" text-anchor="middle" style="font-size:10px">VCC</text>
+    <g><rect class="bdg" x="298.0" y="478" width="16.0" height="16" rx="8"/><text class="bdt" x="306" y="489.6" text-anchor="middle">12</text></g>
+    <text class="sb" x="336" y="518" text-anchor="middle" style="font-size:10px">TRIG</text>
+    <g><rect class="bdg" x="328.0" y="478" width="16.0" height="16" rx="8"/><text class="bdt" x="336" y="489.6" text-anchor="middle">19</text></g>
+    <text class="sb" x="368" y="518" text-anchor="middle" style="font-size:10px">ECHO</text>
+    <g><rect class="bdg" x="360.0" y="478" width="16.0" height="16" rx="8"/><text class="bdt" x="368" y="489.6" text-anchor="middle">20</text></g>
+    <text class="sb" x="398" y="518" text-anchor="middle" style="font-size:10px">GND</text>
+    <g><rect class="bdg" x="390.0" y="478" width="16.0" height="16" rx="8"/><text class="bdt" x="398" y="489.6" text-anchor="middle">15</text></g>
+    <text class="lb" x="352" y="544" text-anchor="middle">HC-SR04 (kapakta)</text>
+    <rect class="blk" x="55" y="572" width="44" height="16" rx="2"/><text class="sb" x="77" y="606" text-anchor="middle">DC jak</text>
+    <text class="sb" x="64" y="566" text-anchor="middle">−</text><text class="sb" x="90" y="566" text-anchor="middle">+</text>
+    <g><rect class="bdg" x="56.0" y="542" width="16.0" height="16" rx="8"/><text class="bdt" x="64" y="553.6" text-anchor="middle">5</text></g>
+    <g><rect class="bdg" x="82.0" y="542" width="16.0" height="16" rx="8"/><text class="bdt" x="90" y="553.6" text-anchor="middle">1</text></g>
+    <rect class="blk" x="195" y="572" width="56" height="16" rx="2"/><text class="sb" x="223" y="606" text-anchor="middle">Sigorta 4A</text>
+    <g><rect class="bdg" x="199.0" y="548" width="16.0" height="16" rx="8"/><text class="bdt" x="207" y="559.6" text-anchor="middle">1</text></g>
+    <g><rect class="bdg" x="231.0" y="548" width="16.0" height="16" rx="8"/><text class="bdt" x="239" y="559.6" text-anchor="middle">2</text></g>
+    <text class="sb" x="430" y="606" text-anchor="end">arka duvar</text>
+    <text class="sb" x="230" y="632" text-anchor="middle">Numara = 5. bölümdeki kablo listesinin satırı</text>
+    </svg>
+  </div>
+  <p class="muted">Röle modülünün klemens ve header sırası üreticiye göre değişebilir; bağlarken kart üzerindeki yazılara bak. 4'lü header'daki GND boş kalır: optokuplör tarafı yalnızca VCC (3,3V) ve IN uçlarıyla çalışır.</p>
+</section>
+
+<section>
+  <h2>4a · Kablolama: 12V güç ve motor</h2>
+  <p>Aynı yerleşim, kablolar çizilmiş hâli. Önce bu çizimdeki 1–9 numaralı kalın kabloları bağla. Nokta olan yerler birleşme noktasıdır; noktasız kesişmeler birbirine değmez.</p>
+  <div class="legend"><span><i style="background:var(--w12)"></i>12V</span><span><i style="background:var(--wg)"></i>GND</span><span><i style="background:var(--wm)"></i>Motor</span></div>
+  <div class="panel scroll">
+    <svg viewBox="0 0 460 620" width="100%" style="min-width:420px;max-width:600px;display:block;margin:0 auto" role="img" aria-label="Kablolama A: 12V güç ve motor">
+<rect class="blk2" x="20" y="40" width="420" height="540" rx="3"/>
+<path d="M20 580H440" style="stroke:var(--fg);stroke-width:3"/>
+<text class="sb" x="290" y="14" text-anchor="middle">ön kenar: kaplin ve krank yuvası tarafı</text>
+<g><rect x="87" y="0" width="6" height="96" style="fill:var(--muted)"/><rect class="blk" x="68" y="96" width="44" height="54" rx="3"/><text class="sb" x="90" y="127" text-anchor="middle">kaplin</text><rect class="blk" x="30" y="150" width="120" height="22" rx="2"/><rect class="blk" x="55" y="172" width="70" height="196" rx="6" style="fill:var(--codebg)"/><text class="lb" x="90" y="270" text-anchor="middle">Motor</text></g>
+<g><rect class="blk" x="170" y="62" width="75" height="140" rx="2"/><text class="lb" x="207" y="128" text-anchor="middle">LM2596</text><text class="sb" x="207" y="144" text-anchor="middle">5,0V</text><text class="sb" x="187" y="80" text-anchor="middle">OUT+</text><text class="sb" x="228" y="80" text-anchor="middle">OUT−</text><text class="sb" x="187" y="194" text-anchor="middle">IN+</text><text class="sb" x="228" y="194" text-anchor="middle">IN−</text></g>
+<g style="opacity:.35"><rect class="blk" x="290" y="62" width="115" height="186" rx="2"/><rect x="337" y="54" width="22" height="10" style="fill:var(--muted)"/><text class="lb" x="348" y="226" text-anchor="middle">ESP32</text><text class="lb" x="297" y="88" style="font-size:11px">3V3</text><text class="lb" x="297" y="104" style="font-size:11px">GND</text><text class="sb" x="297" y="120" style="font-size:11px">D15</text><text class="sb" x="297" y="136" style="font-size:11px">D2</text><text class="sb" x="297" y="152" style="font-size:11px">D4</text><text class="sb" x="297" y="168" style="font-size:11px">RX2</text><text class="sb" x="297" y="184" style="font-size:11px">TX2</text><text class="lb" x="297" y="200" style="font-size:11px">D5</text><text class="lb" x="297" y="216" style="font-size:11px">D18</text><text class="lb" x="398" y="88" text-anchor="end" style="font-size:11px">VIN</text><text class="lb" x="398" y="104" text-anchor="end" style="font-size:11px">GND</text><text class="sb" x="398" y="120" text-anchor="end" style="font-size:11px">D13</text><text class="sb" x="398" y="136" text-anchor="end" style="font-size:11px">D12</text><text class="sb" x="398" y="152" text-anchor="end" style="font-size:11px">D14</text><text class="lb" x="398" y="168" text-anchor="end" style="font-size:11px">D27</text><text class="lb" x="398" y="184" text-anchor="end" style="font-size:11px">D26</text><text class="sb" x="398" y="200" text-anchor="end" style="font-size:11px">D25</text><text class="lb" x="398" y="216" text-anchor="end" style="font-size:11px">D33</text><text class="lb" x="398" y="232" text-anchor="end" style="font-size:11px">D32</text></g>
+<g><rect class="blk" x="225" y="290" width="185" height="150" rx="2"/><text class="sb" x="240" y="308" text-anchor="middle" style="font-size:10.5px">GND</text><text class="sb" x="262" y="308" text-anchor="middle" style="font-size:10.5px">IN1</text><text class="sb" x="284" y="308" text-anchor="middle" style="font-size:10.5px">IN2</text><text class="sb" x="306" y="308" text-anchor="middle" style="font-size:10.5px">VCC</text><text class="sb" x="358" y="308" text-anchor="middle" style="font-size:10.5px">GND</text><text class="sb" x="388" y="308" text-anchor="middle" style="font-size:10.5px">JD</text><rect x="345" y="296" width="54" height="18" rx="3" style="fill:none;stroke:var(--muted);stroke-dasharray:3 2"/><text class="lb" x="262" y="372" text-anchor="middle">Röle 2</text><text class="lb" x="358" y="372" text-anchor="middle">Röle 1</text><path d="M310 330V420" style="stroke:var(--line);stroke-width:1"/><text class="sb" x="240" y="432" text-anchor="middle" style="font-size:10px">NO2</text><text class="sb" x="262" y="432" text-anchor="middle" style="font-size:10px">COM2</text><text class="sb" x="284" y="432" text-anchor="middle" style="font-size:10px">NC2</text><text class="sb" x="336" y="432" text-anchor="middle" style="font-size:10px">NO1</text><text class="sb" x="358" y="432" text-anchor="middle" style="font-size:10px">COM1</text><text class="sb" x="380" y="432" text-anchor="middle" style="font-size:10px">NC1</text></g>
+<g><rect class="blk" x="40" y="430" width="100" height="26" rx="3"/><text class="sb" x="90" y="447" text-anchor="middle">Wago 12V</text><rect class="blk" x="40" y="480" width="100" height="26" rx="3"/><text class="sb" x="90" y="497" text-anchor="middle">Wago GND</text></g>
+<g style="opacity:.35"><rect x="290" y="500" width="125" height="58" rx="3" style="fill:none;stroke:var(--muted);stroke-dasharray:5 4"/><text class="sb" x="306" y="518" text-anchor="middle" style="font-size:10px">VCC</text><text class="sb" x="336" y="518" text-anchor="middle" style="font-size:10px">TRIG</text><text class="sb" x="368" y="518" text-anchor="middle" style="font-size:10px">ECHO</text><text class="sb" x="398" y="518" text-anchor="middle" style="font-size:10px">GND</text><text class="lb" x="352" y="544" text-anchor="middle">HC-SR04</text></g>
+<g><rect class="blk" x="52" y="572" width="50" height="16" rx="2"/><text class="sb" x="77" y="606" text-anchor="middle">DC jak</text><text class="sb" x="64" y="568" text-anchor="middle">−</text><text class="sb" x="90" y="568" text-anchor="middle">+</text><rect class="blk" x="195" y="572" width="56" height="16" rx="2"/><text class="sb" x="223" y="606" text-anchor="middle">Sigorta 4A</text><text class="sb" x="430" y="606" text-anchor="end">arka duvar</text></g>
+<g style="fill:none;stroke:var(--panel);stroke-width:7;stroke-linejoin:round"><path d="M90 572V560H207V572"/><path d="M239 572V548H152V443H140"/><path d="M140 450H232V464H336V440"/><path d="M240 464V440"/><path d="M140 437H160V216H187V202"/><path d="M64 572V506"/><path d="M140 497H380V440"/><path d="M284 497V440"/><path d="M140 487H212V216H228V202"/><path d="M75 368V400H28V530H358V440"/><path d="M105 368V408H36V522H262V440"/></g>
+<path class="w w12" d="M90 572V560H207V572" style="stroke-width:2.6"/>
+<path class="w w12" d="M239 572V548H152V443H140" style="stroke-width:2.6"/>
+<path class="w w12" d="M140 450H232V464H336V440" style="stroke-width:2.6"/>
+<path class="w w12" d="M240 464V440" style="stroke-width:2.6"/>
+<path class="w w12" d="M140 437H160V216H187V202" style="stroke-width:2"/>
+<path class="w wg" d="M64 572V506" style="stroke-width:2.6"/>
+<path class="w wg" d="M140 497H380V440" style="stroke-width:2.6"/>
+<path class="w wg" d="M284 497V440" style="stroke-width:2.6"/>
+<path class="w wg" d="M140 487H212V216H228V202" style="stroke-width:2"/>
+<path class="w wm" d="M75 368V400H28V530H358V440" style="stroke-width:2.6"/>
+<path class="w wm" d="M105 368V408H36V522H262V440" style="stroke-width:2.6"/>
+<circle class="dot d12" cx="240" cy="464" r="3.5"/>
+<circle class="dot dg" cx="284" cy="497" r="3.5"/>
+<g><rect class="bdg" x="142.0" y="552" width="16.0" height="16" rx="8"/><text class="bdt" x="150" y="563.6" text-anchor="middle">1</text></g>
+<g><rect class="bdg" x="192.0" y="540" width="16.0" height="16" rx="8"/><text class="bdt" x="200" y="551.6" text-anchor="middle">2</text></g>
+<g><rect class="bdg" x="292.0" y="456" width="16.0" height="16" rx="8"/><text class="bdt" x="300" y="467.6" text-anchor="middle">3</text></g>
+<g><rect class="bdg" x="152.0" y="312" width="16.0" height="16" rx="8"/><text class="bdt" x="160" y="323.6" text-anchor="middle">4</text></g>
+<g><rect class="bdg" x="56.0" y="544" width="16.0" height="16" rx="8"/><text class="bdt" x="64" y="555.6" text-anchor="middle">5</text></g>
+<g><rect class="bdg" x="322.0" y="489" width="16.0" height="16" rx="8"/><text class="bdt" x="330" y="500.6" text-anchor="middle">6</text></g>
+<g><rect class="bdg" x="204.0" y="322" width="16.0" height="16" rx="8"/><text class="bdt" x="212" y="333.6" text-anchor="middle">7</text></g>
+<g><rect class="bdg" x="312.0" y="522" width="16.0" height="16" rx="8"/><text class="bdt" x="320" y="533.6" text-anchor="middle">8</text></g>
+<g><rect class="bdg" x="192.0" y="514" width="16.0" height="16" rx="8"/><text class="bdt" x="200" y="525.6" text-anchor="middle">9</text></g>
+</svg>
+
+  </div>
+</section>
+
+<section>
+  <h2>4b · Kablolama: 5V, 3,3V ve sinyal</h2>
+  <p>LM2596'yı 5,0V'a ayarladıktan sonra 10–21 numaralı ince kabloları bağla. R1 ECHO kablosunun üzerine, R2 ve R3 D18 ile GND arasına seri lehimlenir. Buton paneli bağlantıları (22–28) 6. bölümde.</p>
+  <div class="legend"><span><i style="background:var(--w5)"></i>5V</span><span><i style="background:var(--w33)"></i>3,3V</span><span><i style="background:var(--wg)"></i>GND</span><span><i style="background:var(--ws)"></i>Sinyal</span></div>
+  <div class="panel scroll">
+    <svg viewBox="0 0 460 620" width="100%" style="min-width:420px;max-width:600px;display:block;margin:0 auto" role="img" aria-label="Kablolama B: 5V, 3,3V ve sinyal">
+<rect class="blk2" x="20" y="40" width="420" height="540" rx="3"/>
+<path d="M20 580H440" style="stroke:var(--fg);stroke-width:3"/>
+<text class="sb" x="290" y="14" text-anchor="middle">ön kenar: kaplin ve krank yuvası tarafı</text>
+<g style="opacity:.35"><rect x="87" y="0" width="6" height="96" style="fill:var(--muted)"/><rect class="blk" x="68" y="96" width="44" height="54" rx="3"/><text class="sb" x="90" y="127" text-anchor="middle">kaplin</text><rect class="blk" x="30" y="150" width="120" height="22" rx="2"/><rect class="blk" x="55" y="172" width="70" height="196" rx="6" style="fill:var(--codebg)"/><text class="lb" x="90" y="270" text-anchor="middle">Motor</text></g>
+<g><rect class="blk" x="170" y="62" width="75" height="140" rx="2"/><text class="lb" x="207" y="128" text-anchor="middle">LM2596</text><text class="sb" x="207" y="144" text-anchor="middle">5,0V</text><text class="sb" x="187" y="80" text-anchor="middle">OUT+</text><text class="sb" x="228" y="80" text-anchor="middle">OUT−</text><text class="sb" x="187" y="194" text-anchor="middle">IN+</text><text class="sb" x="228" y="194" text-anchor="middle">IN−</text></g>
+<g><rect class="blk" x="290" y="62" width="115" height="186" rx="2"/><rect x="337" y="54" width="22" height="10" style="fill:var(--muted)"/><text class="lb" x="348" y="226" text-anchor="middle">ESP32</text><text class="lb" x="297" y="88" style="font-size:11px">3V3</text><text class="lb" x="297" y="104" style="font-size:11px">GND</text><text class="sb" x="297" y="120" style="font-size:11px">D15</text><text class="sb" x="297" y="136" style="font-size:11px">D2</text><text class="sb" x="297" y="152" style="font-size:11px">D4</text><text class="sb" x="297" y="168" style="font-size:11px">RX2</text><text class="sb" x="297" y="184" style="font-size:11px">TX2</text><text class="lb" x="297" y="200" style="font-size:11px">D5</text><text class="lb" x="297" y="216" style="font-size:11px">D18</text><text class="lb" x="398" y="88" text-anchor="end" style="font-size:11px">VIN</text><text class="lb" x="398" y="104" text-anchor="end" style="font-size:11px">GND</text><text class="sb" x="398" y="120" text-anchor="end" style="font-size:11px">D13</text><text class="sb" x="398" y="136" text-anchor="end" style="font-size:11px">D12</text><text class="sb" x="398" y="152" text-anchor="end" style="font-size:11px">D14</text><text class="lb" x="398" y="168" text-anchor="end" style="font-size:11px">D27</text><text class="lb" x="398" y="184" text-anchor="end" style="font-size:11px">D26</text><text class="sb" x="398" y="200" text-anchor="end" style="font-size:11px">D25</text><text class="lb" x="398" y="216" text-anchor="end" style="font-size:11px">D33</text><text class="lb" x="398" y="232" text-anchor="end" style="font-size:11px">D32</text></g>
+<g><rect class="blk" x="225" y="290" width="185" height="150" rx="2"/><text class="sb" x="240" y="308" text-anchor="middle" style="font-size:10.5px">GND</text><text class="sb" x="262" y="308" text-anchor="middle" style="font-size:10.5px">IN1</text><text class="sb" x="284" y="308" text-anchor="middle" style="font-size:10.5px">IN2</text><text class="sb" x="306" y="308" text-anchor="middle" style="font-size:10.5px">VCC</text><text class="sb" x="358" y="308" text-anchor="middle" style="font-size:10.5px">GND</text><text class="sb" x="388" y="308" text-anchor="middle" style="font-size:10.5px">JD</text><rect x="345" y="296" width="54" height="18" rx="3" style="fill:none;stroke:var(--muted);stroke-dasharray:3 2"/><text class="lb" x="262" y="372" text-anchor="middle">Röle 2</text><text class="lb" x="358" y="372" text-anchor="middle">Röle 1</text><path d="M310 330V420" style="stroke:var(--line);stroke-width:1"/><text class="sb" x="240" y="432" text-anchor="middle" style="font-size:10px">NO2</text><text class="sb" x="262" y="432" text-anchor="middle" style="font-size:10px">COM2</text><text class="sb" x="284" y="432" text-anchor="middle" style="font-size:10px">NC2</text><text class="sb" x="336" y="432" text-anchor="middle" style="font-size:10px">NO1</text><text class="sb" x="358" y="432" text-anchor="middle" style="font-size:10px">COM1</text><text class="sb" x="380" y="432" text-anchor="middle" style="font-size:10px">NC1</text></g>
+<g style="opacity:.35"><rect class="blk" x="40" y="430" width="100" height="26" rx="3"/><text class="sb" x="90" y="447" text-anchor="middle">Wago 12V</text><rect class="blk" x="40" y="480" width="100" height="26" rx="3"/><text class="sb" x="90" y="497" text-anchor="middle">Wago GND</text></g>
+<g><rect x="290" y="500" width="125" height="58" rx="3" style="fill:none;stroke:var(--muted);stroke-dasharray:5 4"/><text class="sb" x="306" y="518" text-anchor="middle" style="font-size:10px">VCC</text><text class="sb" x="336" y="518" text-anchor="middle" style="font-size:10px">TRIG</text><text class="sb" x="368" y="518" text-anchor="middle" style="font-size:10px">ECHO</text><text class="sb" x="398" y="518" text-anchor="middle" style="font-size:10px">GND</text><text class="lb" x="352" y="544" text-anchor="middle">HC-SR04</text></g>
+<g style="opacity:.35"><rect class="blk" x="52" y="572" width="50" height="16" rx="2"/><text class="sb" x="77" y="606" text-anchor="middle">DC jak</text><text class="sb" x="64" y="568" text-anchor="middle">−</text><text class="sb" x="90" y="568" text-anchor="middle">+</text><rect class="blk" x="195" y="572" width="56" height="16" rx="2"/><text class="sb" x="223" y="606" text-anchor="middle">Sigorta 4A</text><text class="sb" x="430" y="606" text-anchor="end">arka duvar</text></g>
+<g style="fill:none;stroke:var(--panel);stroke-width:7;stroke-linejoin:round"><path d="M187 62V30H436V84H405"/><path d="M436 84V280H388V290"/><path d="M436 280V486H306V500"/><path d="M228 62V42H424V100H405"/><path d="M424 100V272H358V290"/><path d="M424 272V494H398V500"/><path d="M290 84H250V280H306V290"/><path d="M405 180H412V264H262V290"/><path d="M405 164H408V258H284V290"/><path d="M290 196H274V246H218V458H336V500"/><path d="M368 500V466H208V232H268V212H290"/><path d="M268 212V100H290"/></g>
+<path class="w w5" d="M187 62V30H436V84H405" style="stroke-width:2.2"/>
+<path class="w w5" d="M436 84V280H388V290" style="stroke-width:2.2"/>
+<path class="w w5" d="M436 280V486H306V500" style="stroke-width:2.2"/>
+<path class="w wg" d="M228 62V42H424V100H405" style="stroke-width:2.2"/>
+<path class="w wg" d="M424 100V272H358V290" style="stroke-width:2.2"/>
+<path class="w wg" d="M424 272V494H398V500" style="stroke-width:2.2"/>
+<path class="w w33" d="M290 84H250V280H306V290" style="stroke-width:2.2"/>
+<path class="w ws" d="M405 180H412V264H262V290" style="stroke-width:2.2"/>
+<path class="w ws" d="M405 164H408V258H284V290" style="stroke-width:2.2"/>
+<path class="w ws" d="M290 196H274V246H218V458H336V500" style="stroke-width:2.2"/>
+<path class="w ws" d="M368 500V466H208V232H268V212H290" style="stroke-width:2.2"/>
+<path class="w wg" d="M268 212V100H290" style="stroke-width:2.2"/>
+<circle class="dot d5" cx="436" cy="84" r="3.5"/>
+<circle class="dot d5" cx="436" cy="280" r="3.5"/>
+<circle class="dot dg" cx="424" cy="100" r="3.5"/>
+<circle class="dot dg" cx="424" cy="272" r="3.5"/>
+<circle class="dot ds" cx="268" cy="212" r="3.5"/>
+<g><rect class="bdg" x="292.0" y="22" width="16.0" height="16" rx="8"/><text class="bdt" x="300" y="33.6" text-anchor="middle">10</text></g>
+<g><rect class="bdg" x="428.0" y="192" width="16.0" height="16" rx="8"/><text class="bdt" x="436" y="203.6" text-anchor="middle">11</text></g>
+<g><rect class="bdg" x="428.0" y="392" width="16.0" height="16" rx="8"/><text class="bdt" x="436" y="403.6" text-anchor="middle">12</text></g>
+<g><rect class="bdg" x="352.0" y="34" width="16.0" height="16" rx="8"/><text class="bdt" x="360" y="45.6" text-anchor="middle">13</text></g>
+<g><rect class="bdg" x="416.0" y="212" width="16.0" height="16" rx="8"/><text class="bdt" x="424" y="223.6" text-anchor="middle">14</text></g>
+<g><rect class="bdg" x="416.0" y="422" width="16.0" height="16" rx="8"/><text class="bdt" x="424" y="433.6" text-anchor="middle">15</text></g>
+<g><rect class="bdg" x="242.0" y="172" width="16.0" height="16" rx="8"/><text class="bdt" x="250" y="183.6" text-anchor="middle">16</text></g>
+<g><rect class="bdg" x="322.0" y="256" width="16.0" height="16" rx="8"/><text class="bdt" x="330" y="267.6" text-anchor="middle">17</text></g>
+<g><rect class="bdg" x="362.0" y="250" width="16.0" height="16" rx="8"/><text class="bdt" x="370" y="261.6" text-anchor="middle">18</text></g>
+<g><rect class="bdg" x="210.0" y="402" width="16.0" height="16" rx="8"/><text class="bdt" x="218" y="413.6" text-anchor="middle">19</text></g>
+<g><rect class="bdg" x="292.0" y="458" width="16.0" height="16" rx="8"/><text class="bdt" x="300" y="469.6" text-anchor="middle">20</text></g>
+<g><rect class="bdg" x="260.0" y="139" width="16.0" height="16" rx="8"/><text class="bdt" x="268" y="150.6" text-anchor="middle">21</text></g>
+<rect class="res" x="203" y="320" width="10" height="28" rx="1"/><text class="sb" x="198" y="338" text-anchor="end">R1 10k</text>
+<rect class="res" x="263" y="160" width="10" height="22" rx="1"/><rect class="res" x="263" y="112" width="10" height="22" rx="1"/>
+<text class="sb" x="276" y="175" style="font-size:10px">R2</text><text class="sb" x="276" y="127" style="font-size:10px">R3</text>
+</svg>
+
+  </div>
+</section>
+
+<section>
+  <h2>5 · Kablo listesi</h2>
+  <p>Bağlantıları bu sırayla yap: önce güç, sonra motor, en son sinyaller. Her adımdan sonra kısa devre için multimetreyle kontrol et.</p>
+  <div class="panel scroll">
+  <table>
+    <thead><tr><th>#</th><th>Nereden</th><th>Nereye</th><th>Kablo</th><th>Not</th></tr></thead>
+    <tbody>
+      <tr><td colspan="5"><strong>12V güç</strong></td></tr>
+      <tr><td>1</td><td>DC jak + (orta pin)</td><td>Sigorta yuvası arka ucu</td><td>1 mm² kırmızı</td><td>İkisi de kapağın arka duvarında. Lehimle, makaronla kapat.</td></tr>
+      <tr><td>2</td><td>Sigorta yuvası yan ucu</td><td>Wago 12V (3'lü)</td><td>1 mm² kırmızı</td><td>Kapak sökülebilsin diye bu kabloyu biraz uzun bırak.</td></tr>
+      <tr><td>3</td><td>Wago 12V</td><td>Röle 1 NO ve Röle 2 NO</td><td>1 mm² kırmızı</td><td>İki NO arasına kısa bir köprü kablo.</td></tr>
+      <tr><td>4</td><td>Wago 12V</td><td>LM2596 IN+</td><td>0,5 mm² kırmızı</td><td>Lehim.</td></tr>
+      <tr><td>5</td><td>DC jak −</td><td>Wago GND (5'li)</td><td>1 mm² siyah</td><td></td></tr>
+      <tr><td>6</td><td>Wago GND</td><td>Röle 1 NC ve Röle 2 NC</td><td>1 mm² siyah</td><td>İki NC arasına kısa köprü.</td></tr>
+      <tr><td>7</td><td>Wago GND</td><td>LM2596 IN−</td><td>0,5 mm² siyah</td><td>Lehim.</td></tr>
+      <tr><td colspan="5"><strong>Motor</strong></td></tr>
+      <tr><td>8</td><td>Motor ucu 1</td><td>Röle 1 COM</td><td>1 mm²</td><td>Masa ters giderse 8 ile 9'u yer değiştir.</td></tr>
+      <tr><td>9</td><td>Motor ucu 2</td><td>Röle 2 COM</td><td>1 mm²</td><td>Motor uçlarına 100 nF seramik kondansatör lehimlemek ESP32'nin parazitten etkilenmesini azaltır.</td></tr>
+      <tr><td colspan="5"><strong>5V ve 3,3V</strong> (LM2596'yı önce 5,0V'a ayarla)</td></tr>
+      <tr><td>10</td><td>LM2596 OUT+</td><td>ESP32 VIN</td><td>Jumper, turuncu</td><td>Bu hat bağlıyken ESP32'ye USB takma.</td></tr>
+      <tr><td>11</td><td>LM2596 OUT+</td><td>Röle bobin VCC (JD-VCC)</td><td>Jumper, turuncu</td><td>3'lü header'da 4'lü header VCC'siyle bağlantısı <em>olmayan</em> VCC pini. Jumper çıkarılmış olmalı.</td></tr>
+      <tr><td>12</td><td>LM2596 OUT+</td><td>HC-SR04 VCC</td><td>Jumper, turuncu, ~25 cm</td><td>Kapak sökülebilsin diye ara konnektörlü.</td></tr>
+      <tr><td>13</td><td>LM2596 OUT−</td><td>ESP32 GND</td><td>Jumper, siyah</td><td>LM2596'nın IN− ve OUT− uçları kart üzerinde ortaktır.</td></tr>
+      <tr><td>14</td><td>LM2596 OUT−</td><td>Röle GND (3'lü header'daki)</td><td>Jumper, siyah</td><td></td></tr>
+      <tr><td>15</td><td>LM2596 OUT−</td><td>HC-SR04 GND</td><td>Jumper, siyah, ~25 cm</td><td>Bölücünün alt ucu da buraya.</td></tr>
+      <tr><td>16</td><td>ESP32 3V3</td><td>Röle VCC (IN1/IN2 yanındaki)</td><td>Jumper, sarı</td><td>Optokuplör tarafı 3,3V ile çalışır.</td></tr>
+      <tr><td colspan="5"><strong>Sinyaller</strong></td></tr>
+      <tr><td>17</td><td>ESP32 D26</td><td>Röle IN1</td><td>Jumper, mavi</td><td>Yukarı</td></tr>
+      <tr><td>18</td><td>ESP32 D27</td><td>Röle IN2</td><td>Jumper, yeşil</td><td>Aşağı</td></tr>
+      <tr><td>19</td><td>ESP32 D5</td><td>HC-SR04 TRIG</td><td>Jumper, beyaz, ~25 cm</td><td></td></tr>
+      <tr><td>20</td><td>HC-SR04 ECHO</td><td>R1 (10k seri) → ESP32 D18</td><td>Jumper, mor, ~25 cm</td><td>Direnç kabloya seri lehimlenir, makaronla kapatılır.</td></tr>
+      <tr><td>21</td><td>ESP32 D18</td><td>R2 + R3 (2 × 10k seri) → ESP32 GND (3V3 yanındaki)</td><td>Kısa jumper</td><td>Bölücünün GND kolu. D18 pininde ~3,3V oluşturur.</td></tr>
+      <tr><td>22–28</td><td colspan="4">Buton paneli: 6. bölüm</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <div class="grid2">
+    <div class="panel" style="display:flex;flex-direction:column;gap:8px">
+      <h3>Bölücüyü nasıl yaparım</h3>
+      <p class="muted" style="font-size:15px">HC-SR04'ün ECHO kablosunu ortadan kes, araya bir 10k direnç lehimle, makaronla kapat. ESP32 tarafındaki uca ikinci bir kablo ekle; bu kablo seri iki 10k direnç üzerinden GND'ye gider. Elinde tek 10k varsa 10k potansiyometre ile aynı işi yap ve orta uçta 3,3V'u ayarla.</p>
+    </div>
+    <div class="panel" style="display:flex;flex-direction:column;gap:8px">
+      <h3>Kapak sökülebilir kalsın</h3>
+      <p class="muted" style="font-size:15px">HC-SR04'e giden dört kabloyu kapak çıkarılabilecek uzunlukta bırak ve araya 4 pinli bir dupont ara konnektör koy. Kapağı sökerken sensörü bu noktadan ayırırsın.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>6 · Buton paneli</h2>
+  <p>Masanın ön kenarının altına takılan küçük panel: 0,91" ekran ve üç buton. Ana kutuya iki RJ45 keystone ve düz bir patch kabloyla bağlanır; kablo iki uçtan da sökülebilir. Masayı Home Assistant'tan bağımsız kullanırsın; HA kapalıyken veya WiFi yokken de çalışır.</p>
+  <div class="grid2">
+    <div class="panel" style="display:flex;flex-direction:column;gap:6px">
+      <h3>Butonlar</h3>
+      <p class="muted" style="font-size:15px"><strong>▲ / ▼ kısa bas:</strong> masa en üste / en alta kadar gider.<br><strong>▲ / ▼ basılı tut:</strong> tuttuğun sürece gider, bırakınca durur.<br><strong>Hareket ederken herhangi bir tuş:</strong> durur.<br><strong>■ DUR:</strong> her durumda anında durdurur.</p>
+    </div>
+    <div class="panel" style="display:flex;flex-direction:column;gap:6px">
+      <h3>Ekran</h3>
+      <p class="muted" style="font-size:15px">Üstte büyük puntoyla yükseklik (cm) ve hareket oku. Altta: hareket sırasında hedef yükseklik, dururken "HA BAGLI" / "HA YOK", DUR'a basınca 2 saniye "DURDU".</p>
+    </div>
+  </div>
+  <div class="panel scroll">
+    <svg viewBox="0 0 680 300" width="100%" style="min-width:600px" role="img" aria-label="Buton paneli bağlantısı">
+    <rect class="blk" x="20" y="34" width="120" height="236" rx="4"/><text class="lb" x="80" y="26" text-anchor="middle">ESP32 (kutuda)</text>
+    <rect x="225" y="34" width="190" height="236" rx="10" style="fill:none;stroke:var(--muted);stroke-dasharray:6 5"/><text class="sb" x="320" y="26" text-anchor="middle">Keystone · patch kablo · keystone</text>
+    <rect class="blk" x="470" y="34" width="190" height="236" rx="4"/><text class="lb" x="565" y="26" text-anchor="middle">Panel (masanın önünde)</text>
+    <rect class="blk2" x="560" y="46" width="92" height="110" rx="3"/><text class="lb" x="628" y="96" text-anchor="middle">OLED</text><text class="sb" x="628" y="112" text-anchor="middle">0,91"</text>
+    <text class="lb" x="132" y="64" text-anchor="end">3V3</text>
+    <path class="w w33" d="M140 60H560" style="stroke-width:2.4"/>
+    <text class="sb" x="568" y="64" style="font-size:11px">VCC</text>
+    <text class="sb" x="320" y="54" text-anchor="middle" style="font-size:11px">Turuncu</text>
+    <g><rect class="bdg" x="172.0" y="52" width="16.0" height="16" rx="8"/><text class="bdt" x="180" y="63.6" text-anchor="middle">22</text></g>
+    <text class="lb" x="132" y="94" text-anchor="end">GND</text>
+    <path class="w wg" d="M140 90H560" style="stroke-width:2.4"/>
+    <text class="sb" x="568" y="94" style="font-size:11px">GND</text>
+    <text class="sb" x="320" y="84" text-anchor="middle" style="font-size:11px">Turuncu-beyaz + Yeşil-beyaz</text>
+    <g><rect class="bdg" x="172.0" y="82" width="16.0" height="16" rx="8"/><text class="bdt" x="180" y="93.6" text-anchor="middle">23</text></g>
+    <text class="lb" x="132" y="124" text-anchor="end">D21</text>
+    <path class="w ws" d="M140 120H560" style="stroke-width:2.4"/>
+    <text class="sb" x="568" y="124" style="font-size:11px">SDA</text>
+    <text class="sb" x="320" y="114" text-anchor="middle" style="font-size:11px">Yeşil</text>
+    <g><rect class="bdg" x="172.0" y="112" width="16.0" height="16" rx="8"/><text class="bdt" x="180" y="123.6" text-anchor="middle">24</text></g>
+    <text class="lb" x="132" y="154" text-anchor="end">D22</text>
+    <path class="w ws" d="M140 150H560" style="stroke-width:2.4"/>
+    <text class="sb" x="568" y="154" style="font-size:11px">SCL</text>
+    <text class="sb" x="320" y="144" text-anchor="middle" style="font-size:11px">Mavi</text>
+    <g><rect class="bdg" x="172.0" y="142" width="16.0" height="16" rx="8"/><text class="bdt" x="180" y="153.6" text-anchor="middle">25</text></g>
+    <text class="lb" x="132" y="184" text-anchor="end">D25</text>
+    <path class="w ws" d="M140 180H520" style="stroke-width:2.4"/>
+    <circle cx="520" cy="180" r="2.6" style="fill:var(--fg)"/><circle cx="556" cy="180" r="2.6" style="fill:var(--fg)"/>
+    <path d="M518 171H558M538 171V164" style="stroke:var(--fg);stroke-width:1.6;fill:none"/>
+    <path class="w wg" d="M556 180H590V186" style="stroke-width:2"/><path d="M582 186H598M585 190H595M588 194H592" style="stroke:var(--wg);stroke-width:1.6"/>
+    <text class="sb" x="604" y="184" style="font-size:11px">■ DUR</text>
+    <text class="sb" x="320" y="174" text-anchor="middle" style="font-size:11px">Mavi-beyaz</text>
+    <g><rect class="bdg" x="172.0" y="172" width="16.0" height="16" rx="8"/><text class="bdt" x="180" y="183.6" text-anchor="middle">26</text></g>
+    <text class="lb" x="132" y="214" text-anchor="end">D32</text>
+    <path class="w ws" d="M140 210H520" style="stroke-width:2.4"/>
+    <circle cx="520" cy="210" r="2.6" style="fill:var(--fg)"/><circle cx="556" cy="210" r="2.6" style="fill:var(--fg)"/>
+    <path d="M518 201H558M538 201V194" style="stroke:var(--fg);stroke-width:1.6;fill:none"/>
+    <path class="w wg" d="M556 210H590V216" style="stroke-width:2"/><path d="M582 216H598M585 220H595M588 224H592" style="stroke:var(--wg);stroke-width:1.6"/>
+    <text class="sb" x="604" y="214" style="font-size:11px">▲ YUKARI</text>
+    <text class="sb" x="320" y="204" text-anchor="middle" style="font-size:11px">Kahverengi</text>
+    <g><rect class="bdg" x="172.0" y="202" width="16.0" height="16" rx="8"/><text class="bdt" x="180" y="213.6" text-anchor="middle">27</text></g>
+    <text class="lb" x="132" y="244" text-anchor="end">D33</text>
+    <path class="w ws" d="M140 240H520" style="stroke-width:2.4"/>
+    <circle cx="520" cy="240" r="2.6" style="fill:var(--fg)"/><circle cx="556" cy="240" r="2.6" style="fill:var(--fg)"/>
+    <path d="M518 231H558M538 231V224" style="stroke:var(--fg);stroke-width:1.6;fill:none"/>
+    <path class="w wg" d="M556 240H590V246" style="stroke-width:2"/><path d="M582 246H598M585 250H595M588 254H592" style="stroke:var(--wg);stroke-width:1.6"/>
+    <text class="sb" x="604" y="244" style="font-size:11px">▼ AŞAĞI</text>
+    <text class="sb" x="320" y="234" text-anchor="middle" style="font-size:11px">Kahverengi-beyaz</text>
+    <g><rect class="bdg" x="172.0" y="232" width="16.0" height="16" rx="8"/><text class="bdt" x="180" y="243.6" text-anchor="middle">28</text></g>
+    <text class="sb" x="660" y="290" text-anchor="end" style="font-size:11px">⏚ = panelde GND kablosuna (23) bağlı</text>
+    </svg>
+  </div>
+  <div class="panel scroll">
+  <table>
+    <thead><tr><th>#</th><th>ESP32</th><th>Renk (T568B pin)</th><th>Panelde</th><th>Not</th></tr></thead>
+    <tbody>
+      <tr><td>22</td><td><code>3V3</code></td><td>Turuncu (2)</td><td>OLED VCC</td><td>3V3 pininde röle VCC kablosu (16) da var: ikisini bir Y jumper ya da küçük bir Wago ile birleştir.</td></tr>
+      <tr><td>23</td><td><code>GND</code> (VIN yanındaki)</td><td>Turuncu-beyaz (1) + Yeşil-beyaz (3)</td><td>OLED GND ve üç butonun diğer ucu</td><td>İki damarı iki uçta da birlikte bağla. Panelde butonların ikinci uçlarını birbirine köprüle.</td></tr>
+      <tr><td>24</td><td><code>D21</code> (GPIO21)</td><td>Yeşil (6)</td><td>OLED SDA</td><td>GND ile aynı bükümlü çiftte, I2C için iyi.</td></tr>
+      <tr><td>25</td><td><code>D22</code> (GPIO22)</td><td>Mavi (4)</td><td>OLED SCL</td><td></td></tr>
+      <tr><td>26</td><td><code>D25</code> (GPIO25)</td><td>Mavi-beyaz (5)</td><td>■ DUR</td><td></td></tr>
+      <tr><td>27</td><td><code>D32</code> (GPIO32)</td><td>Kahverengi (8)</td><td>▲ YUKARI</td><td></td></tr>
+      <tr><td>28</td><td><code>D33</code> (GPIO33)</td><td>Kahverengi-beyaz (7)</td><td>▼ AŞAĞI</td><td></td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="muted">Keystone'ları <strong>T568B</strong> renk etiketine göre zımbala (her iki uçta aynı). Düz patch kablo renkleri uçtan uca korur; böylece keystone'un arkasından ESP32'ye ve panele giden kısa damarlar tablodaki renklerle aynı kalır.</p>
+  <div class="grid2">
+    <div class="panel" style="display:flex;flex-direction:column;gap:6px">
+      <h3>Panel kutusunu takmak</h3>
+      <p class="muted" style="font-size:15px">Ön yüzün üst kenarını masanın ön kenarıyla hizala; yüz 10° yukarı baktığı için otururken okunur. Yan kanatlardan 4 adet 3,5×12 ahşap vidasıyla tablaya vidala. Panelin düz arka duvarındaki keystone deliğine (sağ uçta, DUR butonunun arkasında; jack gövdesi kutunun içinde kalır) ve ana kutunun kapağındaki ön deliğe birer keystone jack tak. İkisini düz bir patch kabloyla bağla; kablo panelin arkasından çıkar.</p>
+    </div>
+    <div class="panel" style="display:flex;flex-direction:column;gap:6px">
+      <h3>Butonları yerleştirmek</h3>
+      <p class="muted" style="font-size:15px">Önce başlığı, sonra 6×6 switch'i kutunun açık üstünden yuvasına kaydır: başlık ön delikten dışarı çıkar, flanşı duvarın iç yüzüne dayanır; switch arkadaki çubuğa yaslanır ve siyah çubuğu başlığın altındaki yuvaya girer. Bir damla sıcak silikonla sabitle. 4 bacağın ikişer ikişer içeriden bağlı olduğunu unutma: <strong>çapraz iki bacağı</strong> kullan, biri sinyal kablosuna, diğeri GND'ye. Switch'in boyu 5 mm değilse <code>panel-kutusu.scad</code> dosyasında <code>sw_yukseklik</code> değerini ölçtüğün boya göre değiştir; yoksa buton basılı kalır ya da boşlukta oynar.</p>
+    </div>
+    <div class="panel" style="display:flex;flex-direction:column;gap:6px">
+      <h3>Ekranı yerleştirmek</h3>
+      <p class="muted" style="font-size:15px">OLED'i içeriden cebine, pinleri butonlara bakacak şekilde yerleştir; görünen alan pencereye denk gelir. Kenarlarından sıcak silikonla sabitle, camın ön yüzüne silikon sürme. Pencere ekran merkezine tam oturmazsa .scad dosyasında <code>pencere_x</code> değerini değiştir.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Pin tablosu</h2>
+  <div class="panel scroll">
+  <table>
+    <thead><tr><th>ESP32</th><th>Bağlandığı yer</th><th>Not</th></tr></thead>
+    <tbody>
+      <tr><td><code>5V / VIN</code></td><td>LM2596 OUT+</td><td>USB ile yükleme yaparken bu hattı ayır.</td></tr>
+      <tr><td><code>3V3</code></td><td>Röle modülü VCC</td><td>3'lü header'daki VCC–VCC jumper'ı çıkarılmış olmalı.</td></tr>
+      <tr><td><code>GND</code></td><td>Ortak GND</td><td>Hepsi aynı noktada birleşir.</td></tr>
+      <tr><td><code>D26</code> (GPIO26)</td><td>Röle IN1</td><td>Yukarı</td></tr>
+      <tr><td><code>D27</code> (GPIO27)</td><td>Röle IN2</td><td>Aşağı</td></tr>
+      <tr><td><code>D5</code> (GPIO5)</td><td>HC-SR04 TRIG</td><td>Doğrudan bağlanır.</td></tr>
+      <tr><td><code>D18</code> (GPIO18)</td><td>HC-SR04 ECHO</td><td>R1 seri; D18 → R2 + R3 → GND.</td></tr>
+      <tr><td><code>D21</code> (GPIO21)</td><td>Panel OLED SDA</td><td>I2C, 100 kHz.</td></tr>
+      <tr><td><code>D22</code> (GPIO22)</td><td>Panel OLED SCL</td><td></td></tr>
+      <tr><td><code>D25</code> (GPIO25)</td><td>Panel ■ DUR</td><td>İç pull-up açık.</td></tr>
+      <tr><td><code>D32</code> (GPIO32)</td><td>Panel ▲ YUKARI</td><td>İç pull-up açık.</td></tr>
+      <tr><td><code>D33</code> (GPIO33)</td><td>Panel ▼ AŞAĞI</td><td>İç pull-up açık.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>Kurulum sırası</h2>
+  <ol class="steps">
+    <li><div><h3>LM2596'yı 5,0V'a ayarla</h3><p>Girişe 12V ver, çıkışta yük yokken multimetreyle ayarla.</p></div></li>
+    <li><div><h3>ESPHome'u USB ile yükle</h3><p>HA'da ESPHome Builder'da yeni cihaz oluştur, aşağıdaki YAML'ı yapıştır, ilk yüklemeyi USB ile yap. Sonrakiler WiFi üzerinden gider.</p></div></li>
+    <li><div><h3>Röleleri motorsuz test et</h3><p>Röle modülünü bağla, motoru takma. HA'dan yukarı ve aşağıya bas, her rölenin "tık" diye çekip durdurunca bıraktığını duy. Açılışta röle çekiyorsa YAML'da <code>inverted: true</code> satırlarını sil.</p></div></li>
+    <li><div><h3>Sensörü bağla ve monte et</h3><p>Bölücüyle bağla, tablanın altına yere dik bakacak şekilde vidala. Altında sandalye, ayak veya kablo olmasın. Loglarda yükseklik değeri akmalı.</p></div></li>
+    <li><div><h3>Kalibre et</h3><p>Masayı bir yükseklikte bırak, yerden tabla üstüne kadar ölç. Logdaki değerle farkı <code>offset</code> satırına yaz. En alt ve en üst konumları ölçüp <code>min_h</code> ve <code>max_h</code>'yi düzelt.</p></div></li>
+    <li><div><h3>Kutuyu monte et</h3><p>Body1'deki 4 deliğe M3 insertleri havya ile göm. Motoru 6 adet M3×8 ile ön plakaya vidala, kartları ayaklarına bağla, kablolamayı listedeki sırayla yap. Body1'i altıgen çubuk krank yuvasına girecek şekilde tablaya vidala, kapağı alttan 4 adet M3×12 ile kapat. İlk çalıştırmada kısa basışlarla yönü kontrol et.</p></div></li>
+    <li><div><h3>Buton panelini bağla</h3><p>Panel kutusunu masanın ön kenarına vidala, kabloyu 6. bölümdeki renklere göre iki uçta da bağla. Açılışta ekranda yükseklik görünmeli; ▲ / ▼ ve DUR'u motor bağlıyken kısa basışlarla dene.</p></div></li>
+    <li><div><h3>Güvenlik süresini ayarla</h3><p>En alttan en üste bir turun süresini ölç. YAML'daki <code>delay: 40s</code> değerini bu sürenin biraz üstüne çek.</p></div></li>
+  </ol>
+</section>
+
+<section>
+  <div class="codehead">
+    <h2>ESPHome yapılandırması</h2>
+    <button id="copyBtn" type="button">YAML'ı kopyala</button>
+  </div>
+  <p class="muted">Röle sürümü, üç ayarlanabilir kademe, HA'da masa kontrolü, buton paneli ve OLED ekran. HA veya WiFi koparsa cihaz yeniden başlamaz, panelden çalışmaya devam eder. Kademeler HA'dan değiştirilir ve elektrik kesilse de kaybolmaz.</p>
+<pre id="yaml">esphome:
+  name: trotten-masa
+  friendly_name: Trotten Masa
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+logger:
+
+# Home Assistant ve WiFi olmadan da çalışsın: bağlantı kopunca yeniden başlatma
+api:
+  encryption:
+    key: !secret api_key
+  reboot_timeout: 0s
+ota:
+  - platform: esphome
+    password: !secret ota_password
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  reboot_timeout: 0s
+
+substitutions:
+  min_h: "72.0"      # en alt (cm) – kendi masanda ölç
+  max_h: "122.0"     # en üst (cm)
+
+globals:
+  - id: target_h
+    type: float
+    initial_value: "0"
+  - id: dir          # 1 yukarı, -1 aşağı, 0 duruyor
+    type: int
+    initial_value: "0"
+  - id: basma_ms     # panel tuşuna basıldığı an
+    type: uint32_t
+    initial_value: "0"
+  - id: basildi_hareket   # tuşa basıldığında masa zaten hareket ediyor muydu
+    type: bool
+    initial_value: "false"
+  - id: mesaj
+    type: std::string
+    initial_value: '""'
+  - id: mesaj_ms
+    type: uint32_t
+    initial_value: "0"
+
+# ---------- Röleler (JQC-3FF-S-Z, LOW'da çeker) ----------
+output:
+  - platform: gpio
+    pin: { number: GPIO26, inverted: true }
+    id: relay_a
+  - platform: gpio
+    pin: { number: GPIO27, inverted: true }
+    id: relay_b
+
+# ---------- Yükseklik sensörü ----------
+sensor:
+  - platform: ultrasonic
+    trigger_pin: GPIO5
+    echo_pin: GPIO18           # R1 + R2/R3 bölücüden geliyor
+    name: "Masa Yüksekliği"
+    id: height
+    update_interval: 100ms
+    timeout: 3m
+    unit_of_measurement: "cm"
+    accuracy_decimals: 1
+    filters:
+      - multiply: 100          # m -&gt; cm
+      - offset: 0.0            # kalibrasyon farkı
+      - lambda: |-
+          if (x &lt; 50 || x &gt; 150) return {};
+          return x;
+      - median:
+          window_size: 5
+          send_every: 1
+
+# ---------- Kademeler (HA'dan ayarlanır, hafızada kalır) ----------
+number:
+  - platform: template
+    name: "Kademe 1"
+    id: k1
+    min_value: ${min_h}
+    max_value: ${max_h}
+    step: 0.5
+    unit_of_measurement: "cm"
+    optimistic: true
+    restore_value: true
+    initial_value: 74
+  - platform: template
+    name: "Kademe 2"
+    id: k2
+    min_value: ${min_h}
+    max_value: ${max_h}
+    step: 0.5
+    unit_of_measurement: "cm"
+    optimistic: true
+    restore_value: true
+    initial_value: 95
+  - platform: template
+    name: "Kademe 3"
+    id: k3
+    min_value: ${min_h}
+    max_value: ${max_h}
+    step: 0.5
+    unit_of_measurement: "cm"
+    optimistic: true
+    restore_value: true
+    initial_value: 112
+
+button:
+  - platform: template
+    name: "Kademe 1'e git"
+    on_press:
+      - lambda: id(move_to).execute(id(k1).state);
+  - platform: template
+    name: "Kademe 2'ye git"
+    on_press:
+      - lambda: id(move_to).execute(id(k2).state);
+  - platform: template
+    name: "Kademe 3'e git"
+    on_press:
+      - lambda: id(move_to).execute(id(k3).state);
+
+# ---------- Motor kontrolü ----------
+script:
+  - id: move_to
+    parameters:
+      h: float
+    then:
+      - lambda: |-
+          float cur = id(height).state;
+          if (isnan(cur)) return;
+          id(target_h) = h;
+          if (h &gt; cur + 0.5) id(go_up).execute();
+          else if (h &lt; cur - 0.5) id(go_down).execute();
+  - id: go_up
+    mode: restart
+    then:
+      - script.stop: go_down
+      - output.turn_off: relay_b
+      - delay: 50ms
+      - lambda: id(dir) = 1;
+      - output.turn_on: relay_a
+      - delay: 40s             # güvenlik süresi
+      - script.execute: motor_stop
+  - id: go_down
+    mode: restart
+    then:
+      - script.stop: go_up
+      - output.turn_off: relay_a
+      - delay: 50ms
+      - lambda: id(dir) = -1;
+      - output.turn_on: relay_b
+      - delay: 40s
+      - script.execute: motor_stop
+  - id: motor_stop
+    then:
+      - script.stop: go_up
+      - script.stop: go_down
+      - output.turn_off: relay_a
+      - output.turn_off: relay_b
+      - lambda: id(dir) = 0;
+  - id: goster          # ekranın alt satırında 2 sn mesaj
+    parameters:
+      m: string
+    then:
+      - lambda: |-
+          id(mesaj) = m;
+          id(mesaj_ms) = millis();
+
+interval:
+  - interval: 50ms
+    then:
+      - lambda: |-
+          float h = id(height).state;
+          if (isnan(h) || id(dir) == 0) return;
+          if (id(dir) == 1  &amp;&amp; (h &gt;= id(target_h) || h &gt;= ${max_h})) id(motor_stop).execute();
+          if (id(dir) == -1 &amp;&amp; (h &lt;= id(target_h) || h &lt;= ${min_h})) id(motor_stop).execute();
+
+# ---------- HA'da masa ----------
+cover:
+  - platform: template
+    name: "Masa"
+    has_position: true
+    lambda: |-
+      float h = id(height).state;
+      if (isnan(h)) return {};
+      float p = (h - ${min_h}) / (${max_h} - ${min_h});
+      return clamp(p, 0.0f, 1.0f);
+    open_action:
+      - lambda: id(move_to).execute(${max_h});
+    close_action:
+      - lambda: id(move_to).execute(${min_h});
+    stop_action:
+      - script.execute: motor_stop
+    position_action:
+      - lambda: id(move_to).execute(${min_h} + pos * (${max_h} - ${min_h}));
+
+# ---------- Buton paneli ----------
+# ▲ / ▼ kısa bas: en üste / en alta kadar gider (DUR'a ya da herhangi bir tuşa basınca durur)
+# ▲ / ▼ basılı tut: tuttuğun sürece gider, bırakınca durur
+# ■ DUR: her durumda anında durdurur
+binary_sensor:
+  - platform: status
+    id: ha_bagli
+
+  - platform: gpio
+    id: tus_yukari
+    name: "Panel Yukarı"
+    pin: { number: GPIO32, mode: INPUT_PULLUP, inverted: true }
+    filters:
+      - delayed_on_off: 25ms
+    on_press:
+      - lambda: |-
+          id(basma_ms) = millis();
+          id(basildi_hareket) = id(dir) != 0;
+          if (id(basildi_hareket)) { id(motor_stop).execute(); return; }
+          id(target_h) = ${max_h};
+          id(go_up).execute();
+    on_release:
+      - lambda: |-
+          if (!id(basildi_hareket) &amp;&amp; millis() - id(basma_ms) &gt; 400) id(motor_stop).execute();
+
+  - platform: gpio
+    id: tus_asagi
+    name: "Panel Aşağı"
+    pin: { number: GPIO33, mode: INPUT_PULLUP, inverted: true }
+    filters:
+      - delayed_on_off: 25ms
+    on_press:
+      - lambda: |-
+          id(basma_ms) = millis();
+          id(basildi_hareket) = id(dir) != 0;
+          if (id(basildi_hareket)) { id(motor_stop).execute(); return; }
+          id(target_h) = ${min_h};
+          id(go_down).execute();
+    on_release:
+      - lambda: |-
+          if (!id(basildi_hareket) &amp;&amp; millis() - id(basma_ms) &gt; 400) id(motor_stop).execute();
+
+  - platform: gpio
+    id: tus_dur
+    name: "Panel Dur"
+    pin: { number: GPIO25, mode: INPUT_PULLUP, inverted: true }
+    filters:
+      - delayed_on: 25ms
+    on_press:
+      - script.execute: motor_stop
+      - lambda: id(goster).execute("DURDU");
+
+# ---------- OLED 0,91" 128x32 ----------
+i2c:
+  sda: GPIO21
+  scl: GPIO22
+  frequency: 100kHz          # panel kablosu ~1 m, düşük hız daha güvenli
+
+font:
+  - file: "gfonts://Roboto Condensed@700"
+    id: buyuk
+    size: 22
+    glyphs: "0123456789.-"
+  - file: "gfonts://Roboto Condensed"
+    id: kucuk
+    size: 10
+    glyphs: " 0123456789.-:cmABCDEFGHIJKLMNOPRSTUVYZ"
+
+display:
+  - platform: ssd1306_i2c
+    model: "SSD1306 128x32"
+    address: 0x3C
+    update_interval: 200ms
+    lambda: |-
+      float h = id(height).state;
+      // üst satır: büyük yükseklik
+      if (isnan(h)) it.print(0, -2, id(buyuk), "--.-");
+      else          it.printf(0, -2, id(buyuk), "%.1f", h);
+      it.print(64, 9, id(kucuk), "cm");
+      // sağ üst: hareket oku
+      if (id(dir) == 1)  it.filled_triangle(110, 18, 127, 18, 118, 2);
+      if (id(dir) == -1) it.filled_triangle(110, 2, 127, 2, 118, 18);
+      // alt satır: geçici mesaj, yoksa hedef / bağlantı durumu
+      if (millis() - id(mesaj_ms) &lt; 2000 &amp;&amp; !id(mesaj).empty()) {
+        it.print(0, 21, id(kucuk), id(mesaj).c_str());
+      } else if (id(dir) != 0) {
+        it.printf(0, 21, id(kucuk), "HEDEF %.0f", id(target_h));
+      } else {
+        it.print(0, 21, id(kucuk), id(ha_bagli).state ? "HA BAGLI" : "HA YOK");
+      }</pre>
+</section>
+
+<section>
+  <h2>Sorun çıkarsa</h2>
+  <div class="panel scroll">
+  <table>
+    <thead><tr><th>Belirti</th><th>Çözüm</th></tr></thead>
+    <tbody>
+      <tr><td>Röle bırakmıyor</td><td>3'lü header'daki VCC–VCC jumper'ı çıkarılmış mı, sinyal VCC'si 3V3'te, bobin VCC'si 5V'ta mı kontrol et. İki VCC'yi ters bağladıysan yer değiştir.</td></tr>
+      <tr><td>Açılışta masa kendi kendine hareket ediyor</td><td>Modül aktif-HIGH. YAML'da <code>inverted: true</code> satırlarını sil.</td></tr>
+      <tr><td>Masa ters yöne gidiyor</td><td>Motor kablolarını iki COM arasında yer değiştir.</td></tr>
+      <tr><td>Yükseklik zıplıyor</td><td>Sensörün altını boşalt, halı varsa altına sert bir yüzey koy.</td></tr>
+      <tr><td>Hedefi hep aynı yönde 0,5–1 cm kaçırıyor</td><td><code>interval</code> içinde hedefe küçük bir pay ekle, ör. <code>h &gt;= id(target_h) - 0.7</code>.</td></tr>
+      <tr><td>Panel ekranı boş kalıyor</td><td>Loglarda I2C taramasına bak: ekran 0x3D'de görünüyorsa YAML'da <code>address</code> satırını değiştir. SDA ile SCL'nin yer değiştirmediğini kontrol et.</td></tr>
+      <tr><td>Panel tuşu hep basılı görünüyor</td><td>Switch'in aynı taraftaki iki bacağını kullanmış olabilirsin; bunlar içeriden zaten bağlıdır. Çapraz bacakları kullan.</td></tr>
+      <tr><td>Panel tuşu kendiliğinden tetikleniyor</td><td>Kablo motor kablolarının yanından geçiyorsa ayır. Olmazsa YAML'da <code>delayed_on_off</code> süresini 50ms yap ya da tuş hattından 3V3'e 4,7k direnç ekle.</td></tr>
+      <tr><td>Sigorta atıyor</td><td>Mekanizma sıkışmış veya motor yükte zorlanıyor. Masayı elle krankla kontrol et.</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+</div>
+
+<script>
+document.getElementById('copyBtn').addEventListener('click', function(){
+  var btn=this, txt=document.getElementById('yaml').textContent;
+  function done(){btn.textContent='Kopyalandı';setTimeout(function(){btn.textContent="YAML'ı kopyala";},1600);}
+  function fallback(){var r=document.createRange();r.selectNodeContents(document.getElementById('yaml'));var s=window.getSelection();s.removeAllRanges();s.addRange(r);btn.textContent='Seçildi, Ctrl+C';}
+  try{navigator.clipboard.writeText(txt).then(done,fallback);}catch(e){fallback();}
+});
+</script>
