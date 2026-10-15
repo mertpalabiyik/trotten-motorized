@@ -48,9 +48,9 @@ The desk is controlled from **Home Assistant** (via ESPHome) and from an optiona
 
 | Qty | Part | Notes |
 |---|---|---|
-| 1 | 0.91" OLED, SSD1306, 128 × 32, I2C (4-pin) | Shows height and status |
+| 1 | 0.91" OLED, SSD1306, 128 × 32, I2C (4-pin) | 38 × 12 mm board, 25 × 10 mm glass; the glass sits flush in the front window |
 | 3 | 6 × 6 mm tactile switch, 4-pin, ~5 mm tall | ▲ ▼ ■ (measure height, see `sw_yukseklik` in `panel-box.scad`) |
-| 2 | RJ45 keystone jack, Cat5e/Cat6 | One in the main cover, one in the panel |
+| 2 | RJ45 keystone jack, Cat5e/Cat6 | One in the main cover, one in the panel. Holes are sized for the **Digitus tool-less keystone (20 × 20 × 36 mm)**; for a standard 14.9 × 16 mm punch-down keystone change `ks_delik` in `panel-box.scad` / `cover.scad` |
 | 1 | Straight (T568B) patch cable, 1–1.5 m | Main box ↔ panel |
 
 ### Hardware

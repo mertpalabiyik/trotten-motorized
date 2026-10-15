@@ -50,9 +50,9 @@ Masa, ESPHome üzerinden **Home Assistant**'tan kontrol edilir. İstersen masan�
 
 | Adet | Parça | Not |
 |---|---|---|
-| 1 | 0,91" OLED, SSD1306, 128 × 32, I2C (4 pin) | Yükseklik ve durum |
+| 1 | 0,91" OLED, SSD1306, 128 × 32, I2C (4 pin) | 38 × 12 mm kart, 25 × 10 mm cam; cam ön penceredeki deliğe yüzeyle aynı hizada oturur |
 | 3 | 6 × 6 mm tactile switch, 4 bacaklı, ~5 mm boy | ▲ ▼ ■ (boyunu ölç, `panel-box.scad` içindeki `sw_yukseklik`) |
-| 2 | RJ45 keystone jak, Cat5e/Cat6 | Biri ana kapakta, biri panelde |
+| 2 | RJ45 keystone jak, Cat5e/Cat6 | Biri ana kapakta, biri panelde. Delikler **Digitus aletsiz keystone (20 × 20 × 36 mm)** ölçüsünde; standart 14,9 × 16 mm zımbalı keystone için `panel-box.scad` / `cover.scad` içindeki `ks_delik` değerini değiştir |
 | 1 | Düz (T568B) patch kablo, 1–1,5 m | Ana kutu ↔ panel |
 
 ### Vida ve bağlantı elemanları
