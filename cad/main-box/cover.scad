@@ -17,7 +17,7 @@ sigorta_x = -180;  sigorta_delik = 12.3;   // 5x20 panel sigorta yuvası (12 mm 
 jak_x     = -228;  jak_delik     = 11.2;   // DC-022 5,5x2,1 panel jak (11 mm gövde)
 panel_z   = 26;                            // tabladan aşağı mesafe (delik merkezi)
 /* [Ön duvar – buton paneli RJ45 keystone] */
-ks_delik = [14.9, 16.3];  ks_x = -195;  ks_z = 28;   // jack gevşekse deliği 0,2 mm küçült
+ks_delik = [20.3, 20.3];  ks_x = -195;  ks_z = 28;   // Digitus aletsiz keystone: gövde 20 x 20, mandallar 23, boy 36
 
 $fn = 56;
 
@@ -49,7 +49,7 @@ module kapak() {
         for (s = [-1,1]) translate([hc.x + s*hc_aralik/2, hc.y, ic_taban - 1]) cylinder(d = hc_cap, h = duvar + 2);
         // buton paneli: RJ45 keystone (ön duvar, motor kaplini ile LM2596 arası)
         translate([ks_x - ks_delik[0]/2, y0 - duvar - 1, ks_z - ks_delik[1]/2]) cube([ks_delik[0], duvar + 2, ks_delik[1]]);
-        translate([ks_x - 11, y0 - (duvar - 2.0), ks_z - 11.5]) cube([22, duvar, 23]);   // duvar keystone için içten 2,0 mm'ye incelir
+        translate([ks_x - 13, y0 - (duvar - 2.0), ks_z - 13]) cube([26, duvar, 26]);   // duvar keystone için içten 2,0 mm'ye incelir (mandal payı)
         // ESP32 USB (ön duvar)
         translate([esp_usb_x - 7, y0 - duvar - 1, 20]) cube([14, duvar + 2, 10]);
         // arka duvar: DC jak + dışarıdan değiştirilebilir sigorta
