@@ -185,7 +185,15 @@ script:
           id(mesaj) = m;
           id(mesaj_ms) = millis();
 
+# OLED kendi kendine sıfırlanırsa (WiFi açılışındaki voltaj düşüşü, gevşek kablo) karanlık kalmasın:
+# her 5 sn'de ayar komutlarını yeniden gönder (ekran açıkken gönderilir, titreme olmaz)
 interval:
+  - interval: 5s
+    then:
+      - lambda: |-
+          static const uint8_t init[] = {0x00, 0xD5,0x80, 0xA8,0x1F, 0xD3,0x00, 0x40, 0x8D,0x14, 0x20,0x00,
+                                         0xA1, 0xC8, 0xDA,0x02, 0xD9,0xF1, 0xDB,0x00, 0xA4, 0xA6, 0x2E, 0x81,0xFF, 0xAF};
+          id(i2c_bus)->write(0x3C, init, sizeof(init));
   - interval: 50ms
     then:
       - lambda: |-
@@ -275,6 +283,7 @@ binary_sensor:
 
 # ---------- OLED 0,91" 128x32 ----------
 i2c:
+  id: i2c_bus
   sda: GPIO21
   scl: GPIO22
   frequency: 100kHz          # panel kablosu ~1 m, düşük hız daha güvenli
