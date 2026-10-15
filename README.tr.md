@@ -127,9 +127,9 @@ Tüm parçalar STL'lerin yanında parametrik **OpenSCAD** dosyası (`.scad`) ola
 
 | ESP32 | Nereye |
 |---|---|
-| VIN | LM2596 OUT+ (5V) |
+| VIN | LM2596 OUT+ (5V), panel OLED VCC |
 | GND | LM2596 OUT−, panel GND |
-| 3V3 | Röle modülü VCC (optokuplör tarafı), panel OLED VCC |
+| 3V3 | Röle modülü VCC (optokuplör tarafı) |
 | GPIO26 | Röle IN1 (yukarı) |
 | GPIO27 | Röle IN2 (aşağı) |
 | GPIO5 | HC-SR04 TRIG |
@@ -158,7 +158,7 @@ ECHO ──[10k]──●──[10k]──[10k]── GND
 
 | ESP32 | Damar rengi | Panel |
 |---|---|---|
-| 3V3 | turuncu | OLED VCC |
+| VIN (5V) | turuncu | OLED VCC (modülün kendi 3,3V regülatörü var; 3,3V ile beslenince yanıp söner. SDA/SCL pull-up'ları 3,3V'ta olduğu için ESP32 pinleri güvende) |
 | GND | turuncu-beyaz + yeşil-beyaz | OLED GND, 3 switch'in ortak ucu |
 | GPIO21 | yeşil | OLED SDA |
 | GPIO22 | mavi | OLED SCL |
@@ -204,6 +204,7 @@ Numaralı kablo listesiyle adım adım rehber: [`docs/guide-tr.html`](docs/guide
 - **Yükseklik `--.-` görünüyor:** bölücünün ortası **birinci** ve **ikinci** direncin arasından alınmalı; GPIO18'de yaklaşık 3,3V olmalı.
 - **Yükseklik sabit miktarda kayık:** ultrasonik filtredeki `offset:` değerini ayarla.
 - **Ekran boş:** `Buton Paneli` anahtarı açık mı bak. Paneli taktıktan sonra `Yeniden Başlat`'a bas.
+- **Ekran yanıp sönüyor:** OLED'i 3V3'ten değil 5V'tan (VIN) besle. ESP bağlı değilken SDA–GND arası ~3,3V ölçülmeli.
 
 ## Emeği geçenler ve lisans
 

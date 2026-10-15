@@ -124,9 +124,9 @@ Print in **PETG** (PLA works for the boxes). Coupler: 100 % infill, printed upri
 
 | ESP32 | Connects to |
 |---|---|
-| VIN | LM2596 OUT+ (5 V) |
+| VIN | LM2596 OUT+ (5 V), panel OLED VCC |
 | GND | LM2596 OUT−, panel GND |
-| 3V3 | Relay module VCC (opto side), panel OLED VCC |
+| 3V3 | Relay module VCC (opto side) |
 | GPIO26 | Relay IN1 (up) |
 | GPIO27 | Relay IN2 (down) |
 | GPIO5 | HC-SR04 TRIG |
@@ -150,7 +150,7 @@ ECHO ──[10k]──●──[10k]──[10k]── GND
 
 | ESP32 | Wire colour | Panel |
 |---|---|---|
-| 3V3 | orange | OLED VCC |
+| VIN (5 V) | orange | OLED VCC (the module has its own 3.3 V regulator; on 3.3 V it flickers. Its SDA/SCL pull-ups go to 3.3 V, so the ESP32 pins are safe) |
 | GND | orange-white + green-white | OLED GND, common side of the 3 switches |
 | GPIO21 | green | OLED SDA |
 | GPIO22 | blue | OLED SCL |
@@ -195,6 +195,7 @@ A full step-by-step guide (Turkish) with numbered wire list is in [`docs/guide-t
 - Height reads `--.-` → check the divider tap is between the **first** and **second** resistor (≈ 3.3 V on GPIO18).
 - Height offset → adjust `offset:` in the ultrasonic filter.
 - OLED blank → `Button Panel` switch on? Press `Restart` after connecting the panel.
+- OLED flickers → power it from 5 V (VIN), not 3V3. Check SDA–GND reads ~3.3 V with the ESP disconnected.
 
 ## Credits and license
 
