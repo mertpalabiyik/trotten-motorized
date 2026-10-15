@@ -1,12 +1,12 @@
-// TROTTEN buton paneli: 0,91" OLED (128x32) + 3 adet 6x6 tactile switch (▲ ▼ ■) + arkada RJ45 keystone
+// TROTTEN buton paneli: 0,91" OLED (128x32) + 3 adet 6x6 tactile switch (▲ ▼ ■) + arkada RJ45 keystone (Digitus aletsiz, 20x20x36)
 // Masanın ön kenarının altına, üstteki iki kanattan ahşap vidasıyla takılır.
 // Kutunun üstü açıktır, masa tablası kapak olur. Ön yüz kullanıcıya doğru 10° yukarı bakar.
 // Koordinatlar: X genişlik, Y derinlik (+Y masanın içine), Z yükseklik (z=0 tablaya değen üst kenar, kutu -Z'ye sarkar).
 
 /* [Kutu] */
 genislik   = 112;
-yukseklik  = 22;      // tabladan aşağı sarkma
-derinlik   = 44;      // ön yüzden arka duvara (keystone gövdesi içeride kalsın diye)
+yukseklik  = 28;      // tabladan aşağı sarkma (20x20 keystone + mandallar için)
+derinlik   = 58;      // ön yüzden arka duvara: 36 mm keystone + arkasında kablo payı
 egim       = 10;      // ön yüz eğimi (derece)
 duvar      = 2.0;
 on_duvar   = 2.6;     // buton somunları 6 mm'ye kadar duvar kabul eder
@@ -18,9 +18,10 @@ ahsap_vida = 4.2;
 ahsap_kafa = 8.5;
 
 /* [OLED 0,91" – kart 38 x 12 mm] */
-oled_kart  = [38.6, 12.6];   // pay dahil
+oled_kart  = [38.8, 12.8];   // kart 38 x 12 + pay
 oled_derin = 3.6;            // cam + kart kalınlığı (cebin derinliği)
-pencere    = [24, 8];        // görünen alan + pay
+pencere    = [26, 10.6];     // cam 25 x 10 + pay: cam bu deliğe oturur, ön yüzle aynı hizada
+oled_cilt  = 1.4;            // kartın yaslandığı ön deri kalınlığı (cam kalınlığı kadar)
 pencere_x  = -3.5;           // pencere merkezinin kart merkezine göre kayması (pinlerin tersi yönde)
 oled_u     = -30;            // kart merkezinin ön yüzdeki yatay konumu
 
@@ -40,10 +41,11 @@ sw_arka = -on_duvar - baslik_flans + baslik_tirnak - sw_yukseklik - 0.1;
 butonlar    = [[0, "up"], [20, "down"], [42, "stop"]];   // ön yüzde yatay konum (▲ ▼ yan yana, ■ ayrı)
 
 /* [RJ45 keystone: düz arka duvarın sağ ucunda, gövdesi kutunun içinde] */
-ks_delik = [14.9, 16.3];     // keystone yuvası (genişlik x yükseklik); jack gevşekse 0,2 mm küçült
+ks_delik = [20.3, 20.3];     // Digitus aletsiz keystone: gövde 20 x 20, mandallar 23, boy 36
 ks_x     = 44;               // delik merkezinin yatay konumu
-ks_z     = -10.5;            // delik merkezi (tabladan aşağı)
-sag_ek   = 0;
+ks_mandal = 23;              // mandal açıklığı: iç tarafta bu kadar boşluk kalmalı
+ks_z     = -14;              // delik merkezi (tabladan aşağı)
+sag_ek   = 2;                // keystone mandalları sağ duvara değmesin
 
 $fn = 64;
 
@@ -106,7 +108,7 @@ module panel() {
         // OLED penceresi ve cebi (cep içeriden)
         yuzde(oled_u, 0) {
             translate([pencere_x - pencere[0]/2, -pencere[1]/2, -on_duvar - 1]) cube([pencere[0], pencere[1], on_duvar + 2]);
-            translate([-oled_kart[0]/2, -oled_kart[1]/2, -on_duvar - 1]) cube([oled_kart[0], oled_kart[1], on_duvar + 1 - 0.8]);
+            translate([-oled_kart[0]/2, -oled_kart[1]/2, -on_duvar - 1]) cube([oled_kart[0], oled_kart[1], on_duvar + 1 - oled_cilt]);
         }
         // switch takma kanalı ve açık arka: yalnızca kutunun iç hacminde (dış duvarlar delinmez)
         intersection() {
